@@ -4318,14 +4318,13 @@ window.addEventListener('error', (e) => hardFail('JavaScript error in planner.',
     try {
       const body = JSON.stringify(payload);
       if (navigator.sendBeacon) {
-        const ok = navigator.sendBeacon(COLLECTOR_URL, new Blob([body], { type: 'application/json' }));
+        const ok = navigator.sendBeacon(COLLECTOR_URL, body);
         if (ok) return;
       }
       fetch(COLLECTOR_URL, {
         method: 'POST',
         mode: 'no-cors',
         keepalive: true,
-        headers: { 'Content-Type': 'application/json' },
         body
       }).catch(() => {});
     } catch (_) {}
