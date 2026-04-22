@@ -203,28 +203,57 @@ def normalize_events(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         seen.add(request_id)
 
         payload = parse_request_content(row.get("content"))
+        page = payload.get("page") if isinstance(payload.get("page"), dict) else {}
+        visitor = payload.get("visitor") if isinstance(payload.get("visitor"), dict) else {}
+        display = payload.get("display") if isinstance(payload.get("display"), dict) else {}
         languages = payload.get("languages") if isinstance(payload.get("languages"), list) else None
         click_payload = payload.get("click") if isinstance(payload.get("click"), dict) else None
+        event_name = payload.get("event") or payload.get("eventType") or payload.get("type")
+        method = str(row.get("method") or "").upper()
+
+        if not event_name and method in {"OPTIONS", "HEAD"}:
+            continue
+        if not event_name and not payload:
+            continue
+        if not event_name and payload.get("source") == "openclaw":
+            event_name = "system_test"
+        if not event_name:
+            event_name = "unknown"
+
+        screen = payload.get("screen") if isinstance(payload.get("screen"), dict) else {
+            "width": display.get("screenWidth"),
+            "height": display.get("screenHeight"),
+            "colorDepth": None,
+            "pixelRatio": None,
+        }
+        viewport = payload.get("viewport") if isinstance(payload.get("viewport"), dict) else {
+            "width": display.get("viewportWidth"),
+            "height": display.get("viewportHeight"),
+        }
 
         event = {
             "id": request_id,
-            "event": payload.get("event") or payload.get("type") or "unknown",
+            "event": event_name,
             "receivedAt": parse_webhook_dt(row.get("created_at")),
-            "url": payload.get("url") or row.get("url"),
-            "title": payload.get("title"),
-            "referrer": payload.get("referrer"),
+            "url": payload.get("url") or page.get("href") or row.get("url"),
+            "title": payload.get("title") or page.get("title"),
+            "referrer": payload.get("referrer") or page.get("referrer"),
             "visitorId": payload.get("visitorId"),
             "sessionId": payload.get("sessionId"),
-            "timezone": payload.get("timezone"),
-            "language": payload.get("language") or (languages[0] if languages else None),
-            "platform": payload.get("platform"),
-            "device": payload.get("deviceType") or payload.get("device"),
+            "timezone": payload.get("timezone") or visitor.get("timezone"),
+            "language": payload.get("language") or visitor.get("language") or (languages[0] if languages else None),
+            "platform": payload.get("platform") or visitor.get("platform"),
+            "device": payload.get("deviceType") or payload.get("device") or visitor.get("platform"),
             "userAgent": payload.get("userAgent") or row.get("user_agent"),
             "requestIp": row.get("ip"),
             "country": row.get("country"),
             "city": row.get("city"),
             "tokenId": row.get("token_id"),
-            "durationMs": payload.get("durationMs"),
+            "durationMs": payload.get("durationMs") or payload.get("timeOnPageMs"),
+            "hardwareConcurrency": payload.get("hardwareConcurrency") or visitor.get("hardwareConcurrency"),
+            "deviceMemory": payload.get("deviceMemory") or visitor.get("deviceMemory"),
+            "screen": screen,
+            "viewport": viewport,
             "click": click_payload,
             "payload": payload,
         }
