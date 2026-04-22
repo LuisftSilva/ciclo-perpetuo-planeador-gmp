@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Ciclo Perpétuo — Planeador GMP</title>
+<title>Perpetual Cycle — GMP Planner</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -1095,22 +1095,22 @@ body {
 <!-- HEADER -->
 <div class="header">
   <div class="header-left">
-    <h1>Ciclo Perpétuo</h1>
-    <span>Planeador GMP · Portugal</span>
+    <h1>Perpetual Cycle</h1>
+    <span>GMP Planner · Portugal</span>
   </div>
   <div class="header-actions">
     <button class="btn btn-ghost" onclick="exportExcel()">⬇ Excel</button>
-    <button class="btn btn-primary" onclick="scheduleRecalc()">↺ Atualizar</button>
+    <button class="btn btn-primary" onclick="scheduleRecalc()">↺ Refresh</button>
   </div>
 </div>
 
 <!-- TABS -->
 <div class="tab-nav">
-  <div class="tab active" onclick="switchTab('params')">⚙ Parâmetros</div>
-  <div class="tab" onclick="switchTab('calendar')">📅 Calendário</div>
+  <div class="tab active" onclick="switchTab('params')">⚙ Parameters</div>
+  <div class="tab" onclick="switchTab('calendar')">📅 Calendar</div>
   <div class="tab" onclick="switchTab('gantt')">📊 Gantt</div>
-  <div class="tab" onclick="switchTab('resources')">👥 Recursos</div>
-  <div class="tab" onclick="switchTab('overview')">📋 Resumo</div>
+  <div class="tab" onclick="switchTab('resources')">👥 Resources</div>
+  <div class="tab" onclick="switchTab('overview')">📋 Overview</div>
 </div>
 
 <!-- CONTENT -->
@@ -1123,13 +1123,13 @@ body {
 
       <!-- Start & Rooms -->
       <div class="param-card">
-        <h3><span class="dot" style="background:var(--accent)"></span>Configuração Geral</h3>
+        <h3><span class="dot" style="background:var(--accent)"></span>General Setup</h3>
         <div class="param-row">
-          <label>Data de início<small>Primeiro ciclo: fazer clones</small></label>
+          <label>Start date<small>First cycle: take clones</small></label>
           <input type="date" class="date-input" id="startDate" value="2026-05-25">
         </div>
         <div class="param-row">
-          <label>Salas de cultivo</label>
+          <label>Cultivation rooms</label>
           <div class="num-input">
             <button onclick="adj('nRooms',-1)">−</button>
             <input type="number" id="nRooms" value="2" min="1" max="8" oninput="scheduleRecalc()">
@@ -1137,7 +1137,7 @@ body {
           </div>
         </div>
         <div class="param-row">
-          <label>Genéticas disponíveis<small>Quantas entram na rotação</small></label>
+          <label>Available genetics<small>How many are in rotation</small></label>
           <div class="num-input">
             <button onclick="adj('nGenetics',-1)">−</button>
             <input type="number" id="nGenetics" value="5" min="1" max="10" oninput="scheduleRecalc()">
@@ -1145,7 +1145,7 @@ body {
           </div>
         </div>
         <div class="param-row">
-          <label>Trocar genética a cada<small>N.º de cultivos consecutivos da mesma genética</small></label>
+          <label>Change genetics every<small>No. of consecutive crops for the same genetics</small></label>
           <div class="num-input">
             <button onclick="adj('geneticRotationEvery',-1)">−</button>
             <input type="number" id="geneticRotationEvery" value="3" min="1" max="12" oninput="scheduleRecalc()">
@@ -1154,7 +1154,7 @@ body {
           </div>
         </div>
         <div class="param-row">
-          <label>Horizonte planeamento<small>Em meses</small></label>
+          <label>Planning horizon<small>In months</small></label>
           <div class="num-input">
             <button onclick="adj('horizonMonths',-1)">−</button>
             <input type="number" id="horizonMonths" value="24" min="3" max="36" oninput="scheduleRecalc()">
@@ -1166,9 +1166,9 @@ body {
 
       <!-- Clone room -->
       <div class="param-card">
-        <h3><span class="dot" style="background:var(--c-clone)"></span>Sala de Clones</h3>
+        <h3><span class="dot" style="background:var(--c-clone)"></span>Clone Room</h3>
         <div class="param-row">
-          <label>Fazer clones<small>Tarefa humana na sala de clones</small></label>
+          <label>Take clones<small>Tarefa humana na sala de clones</small></label>
           <div class="num-input">
             <button onclick="adj('dCloneCut',-1)">−</button>
             <input type="number" id="dCloneCut" step="0.5" value="1" min="1" max="5" oninput="scheduleRecalc()">
@@ -1177,7 +1177,7 @@ body {
           </div>
         </div>
         <div class="param-row">
-          <label>Enraizamento<small>Tempo em propagação antes da ida para cultivo</small></label>
+          <label>Rooting<small>Propagation time before moving to cultivation</small></label>
           <div class="num-input">
             <button onclick="adj('dCloneRoot',-1)">−</button>
             <input type="number" id="dCloneRoot" step="0.5" value="15" min="7" max="21" oninput="scheduleRecalc()">
@@ -1189,9 +1189,9 @@ body {
 
       <!-- Cultivation phases -->
       <div class="param-card">
-        <h3><span class="dot" style="background:var(--c-flower)"></span>Sala de Cultivo</h3>
+        <h3><span class="dot" style="background:var(--c-flower)"></span>Cultivation Room</h3>
         <div class="param-row">
-          <label>Preparar sala de cultivo<small>Inchar blocos / preparar substrato no dia anterior</small></label>
+          <label>Prepare cultivation room<small>Expand blocks / prepare substrate on the previous day</small></label>
           <div class="num-input">
             <button onclick="adj('dPrepCultRoom',-1)">−</button>
             <input type="number" id="dPrepCultRoom" step="0.5" value="1" min="1" max="5" oninput="scheduleRecalc()">
@@ -1200,7 +1200,7 @@ body {
           </div>
         </div>
         <div class="param-row">
-          <label>Entrada na sala de cultivo / transplante<small>Tarefa única de entrada + transplante</small></label>
+          <label>Enter cultivation room / transplant<small>Single entry + transplant task</small></label>
           <div class="num-input">
             <button onclick="adj('dTransplant',-1)">−</button>
             <input type="number" id="dTransplant" step="0.5" value="1" min="1" max="5" oninput="scheduleRecalc()">
@@ -1209,7 +1209,7 @@ body {
           </div>
         </div>
         <div class="param-row">
-          <label>Vegetação (18/6)</label>
+          <label>Vegetative growth (18/6)</label>
           <div class="num-input">
             <button onclick="adj('dVeg',-1)">−</button>
             <input type="number" id="dVeg" step="0.5" value="4" min="1" max="30" oninput="scheduleRecalc()">
@@ -1218,7 +1218,7 @@ body {
           </div>
         </div>
         <div class="param-row">
-          <label>Floração (12/12)</label>
+          <label>Flowering (12/12)</label>
           <div class="num-input">
             <button onclick="adj('dFlower',-1)">−</button>
             <input type="number" id="dFlower" step="0.5" value="55" min="30" max="100" oninput="scheduleRecalc()">
@@ -1227,7 +1227,7 @@ body {
           </div>
         </div>
         <div class="param-row">
-          <label>Colheita</label>
+          <label>Harvest</label>
           <div class="num-input">
             <button onclick="adj('dHarvest',-1)">−</button>
             <input type="number" id="dHarvest" step="0.5" value="3" min="1" max="7" oninput="scheduleRecalc()">
@@ -1236,7 +1236,7 @@ body {
           </div>
         </div>
         <div class="param-row">
-          <label>Limpeza + desinfeção sala<small>Paredes, chão, rega, HVAC</small></label>
+          <label>Room cleaning + disinfection<small>Walls, floor, irrigation, HVAC</small></label>
           <div class="num-input">
             <button onclick="adj('dCleanRoom',-1)">−</button>
             <input type="number" id="dCleanRoom" step="0.5" value="4" min="1" max="14" oninput="scheduleRecalc()">
@@ -1248,9 +1248,9 @@ body {
 
       <!-- Post-harvest -->
       <div class="param-card">
-        <h3><span class="dot" style="background:var(--c-dry)"></span>Pós-Colheita (GMP)</h3>
+        <h3><span class="dot" style="background:var(--c-dry)"></span>Pós-Harvest (GMP)</h3>
         <div class="param-row">
-          <label>Secagem<small>18°C / 55-60% RH</small></label>
+          <label>Drying<small>18°C / 55-60% RH</small></label>
           <div class="num-input">
             <button onclick="adj('dDry',-1)">−</button>
             <input type="number" id="dDry" step="0.5" value="14" min="7" max="21" oninput="scheduleRecalc()">
@@ -1259,7 +1259,7 @@ body {
           </div>
         </div>
         <div class="param-row">
-          <label>Salas de secagem<small>Cada sala seca apenas 1 batch de cada vez</small></label>
+          <label>Dry rooms<small>Cada sala seca apenas 1 batch de cada vez</small></label>
           <div class="num-input">
             <button onclick="adj('nDryRooms',-1)">−</button>
             <input type="number" id="nDryRooms" value="1" min="1" max="12" oninput="scheduleRecalc()">
@@ -1267,7 +1267,7 @@ body {
           </div>
         </div>
         <div class="param-row">
-          <label>Limpeza sala secagem<small>Deep clean 32h</small></label>
+          <label>Dry room cleaning<small>Deep clean 32h</small></label>
           <div class="num-input">
             <button onclick="adj('dCleanDry',-1)">−</button>
             <input type="number" id="dCleanDry" step="0.5" value="2" min="1" max="5" oninput="scheduleRecalc()">
@@ -1276,7 +1276,7 @@ body {
           </div>
         </div>
         <div class="param-row">
-          <label>Gross trim<small>Após secagem</small></label>
+          <label>Gross trim<small>After drying</small></label>
           <div class="num-input">
             <button onclick="adj('dGtrim',-1)">−</button>
             <input type="number" id="dGtrim" step="0.5" value="2" min="1" max="5" oninput="scheduleRecalc()">
@@ -1285,7 +1285,7 @@ body {
           </div>
         </div>
         <div class="param-row">
-          <label>Fine trim<small>5 pessoas</small></label>
+          <label>Fine trim<small>5 people</small></label>
           <div class="num-input">
             <button onclick="adj('dFtrim',-1)">−</button>
             <input type="number" id="dFtrim" step="0.5" value="15" min="3" max="30" oninput="scheduleRecalc()">
@@ -1315,17 +1315,17 @@ body {
 
       <!-- Genetics -->
       <div class="param-card">
-        <h3><span class="dot" style="background:var(--c-mother)"></span>Genéticas</h3>
+        <h3><span class="dot" style="background:var(--c-mother)"></span>Genetics</h3>
         <div class="genetics-list" id="geneticsList"></div>
       </div>
 
-      <!-- Human resources -->
+      <!-- Human Resources -->
       <div class="param-card">
-        <h3><span class="dot" style="background:var(--c-pack)"></span>Recursos Humanos</h3>
+        <h3><span class="dot" style="background:var(--c-pack)"></span>Resources Humanos</h3>
         <div class="param-row" style="align-items:flex-start">
           <label class="inline-check">
             <input type="checkbox" id="avoidNationalHolidays" checked onchange="scheduleRecalc()">
-            Evitar fins de semana e feriados nacionais nas tarefas humanas
+            Avoid weekends and national holidays for human tasks
           </label>
         </div>
         <div class="param-row" style="align-items:flex-start">
@@ -1337,12 +1337,12 @@ body {
         <div class="param-row" style="align-items:flex-start">
           <label class="inline-check">
             <input type="checkbox" id="pausePackLabelForOtherTasks" onchange="scheduleRecalc()">
-            Permitir mover Packaging e Labelling para dias livres para baixar o pico de pessoas
+            Allow Packaging and Labelling to move to free days to reduce peak headcount
           </label>
         </div>
         <div class="resource-config-list" id="staffingInputs"></div>
         <div class="resource-note">
-          Define quantas pessoas cada atividade consome. A duração vem dos dias definidos nos cartões das salas. Fases passivas, como floração ou secagem em si, podem ficar a 0. As tarefas de clones e preparação de sala ficam separadas. A entrada na sala de cultivo e o transplante são uma única tarefa. Quando a pausa do fine trim está ativa, o fine trim salta meios-dias onde já existam outras tarefas humanas. Quando a opção de Packaging e Labelling está ativa, essas duas tarefas também podem ser empurradas para dias livres para baixar o pico de headcount, mesmo que isso prolongue o fecho do lote.
+          Set how many people each activity requires. Duration comes from the day values defined in the room cards. Passive phases, such as flowering or drying itself, can stay at 0. Clone tasks and room preparation stay separate. Entering the cultivation room and transplanting are a single task. When fine trim pause is active, fine trim skips half-days that already contain other human tasks. When the Packaging and Labelling option is active, those tasks can also be pushed to free days to reduce peak headcount, even if that extends batch closure.
         </div>
       </div>
 
@@ -1367,13 +1367,13 @@ body {
 
     <div class="cal-month" id="calMonth">
       <div class="cal-weekdays">
-        <div class="cal-weekday">Seg</div>
-        <div class="cal-weekday">Ter</div>
-        <div class="cal-weekday">Qua</div>
-        <div class="cal-weekday">Qui</div>
-        <div class="cal-weekday">Sex</div>
-        <div class="cal-weekday weekend">Sáb</div>
-        <div class="cal-weekday weekend">Dom</div>
+        <div class="cal-weekday">Mon</div>
+        <div class="cal-weekday">Tue</div>
+        <div class="cal-weekday">Wed</div>
+        <div class="cal-weekday">Thu</div>
+        <div class="cal-weekday">Fri</div>
+        <div class="cal-weekday weekend">Sat</div>
+        <div class="cal-weekday weekend">Sun</div>
       </div>
       <div class="cal-grid" id="calGrid"></div>
     </div>
@@ -1411,16 +1411,16 @@ body {
       </div>
       <div style="display:flex;flex-direction:column;gap:14px">
         <div class="resource-chart-wrap">
-          <div class="section-title">Próximos dias críticos</div>
+          <div class="section-title">Upcoming critical days</div>
           <div class="resource-table-wrap" style="padding:0;border:none;box-shadow:none">
             <div id="resourceTimeline"></div>
           </div>
         </div>
         <div class="resource-card">
-          <div class="section-title">Legenda de recursos</div>
+          <div class="section-title">Legend de recursos</div>
           <div class="resource-legend" id="resourceLegend"></div>
           <div class="resource-note">
-            O total diário soma apenas tarefas que exigem pessoas. Fases passivas continuam a existir no plano mas não entram no headcount.
+            The daily total includes only tasks that require people. Passive phases still exist in the plan but do not count toward headcount.
           </div>
         </div>
       </div>
@@ -1497,14 +1497,14 @@ let HOLIDAY_NAMES = {};
 let HOLIDAYS = new Set();
 
 const STAFFING_DEFAULTS = {
-  cloneCut:   { label: 'Fazer clones', people: 2, hint: 'feito na sala de clones' },
-  prepRoom:   { label: 'Preparar sala de cultivo', people: 2, hint: 'inchar blocos / preparar substrato' },
-  transplant: { label: 'Entrada na sala de cultivo / transplante', people: 4, hint: 'entrada em cultivo + transplante para blocos / mesas' },
-  harvest:    { label: 'Colheita', people: 4, hint: 'apenas colheita' },
-  cleanRoom:  { label: 'Limpeza + desinfeção sala', people: 3, hint: 'limpeza e desinfeção' },
-  cleanDry:   { label: 'Limpeza sala secagem', people: 2, hint: 'após saída do lote' },
+  cloneCut:   { label: 'Take clones', people: 2, hint: 'feito na sala de clones' },
+  prepRoom:   { label: 'Prepare cultivation room', people: 2, hint: 'expand blocks / prepare substrate' },
+  transplant: { label: 'Enter cultivation room / transplant', people: 4, hint: 'crop room entry + transplant to blocks / tables' },
+  harvest:    { label: 'Harvest', people: 4, hint: 'apenas colheita' },
+  cleanRoom:  { label: 'Room cleaning + disinfection', people: 3, hint: 'cleaning and disinfection' },
+  cleanDry:   { label: 'Dry room cleaning', people: 2, hint: 'after batch removal' },
   gtrim:      { label: 'Gross trim', people: 3, hint: 'equipa dedicada' },
-  ftrim:      { label: 'Fine trim', people: 5, hint: 'por defeito 5 pessoas' },
+  ftrim:      { label: 'Fine trim', people: 5, hint: 'por defeito 5 people' },
   pack:       { label: 'Packaging', people: 3, hint: 'pesagem e selagem' },
   label:      { label: 'Labelling + QC', people: 2, hint: 'rotulagem e controlo final' }
 };
@@ -1582,16 +1582,16 @@ function buildPortugalNationalHolidays(years) {
   const raw = [];
   const names = {};
   const fixed = [
-    ['01-01', 'Ano Novo'],
-    ['04-25', 'Dia da Liberdade'],
-    ['05-01', 'Dia do Trabalhador'],
-    ['06-10', 'Dia de Portugal'],
-    ['08-15', 'Assunção'],
-    ['10-05', 'Implantação da República'],
-    ['11-01', 'Todos os Santos'],
-    ['12-01', 'Restauração da Independência'],
-    ['12-08', 'Imaculada Conceição'],
-    ['12-25', 'Natal']
+    ['01-01', 'New Year's Day'],
+    ['04-25', 'Freedom Day'],
+    ['05-01', 'Labour Day'],
+    ['06-10', 'Portugal Day'],
+    ['08-15', 'Assumption Day'],
+    ['10-05', 'Republic Day'],
+    ['11-01', 'All Saints' Day'],
+    ['12-01', 'Restoration of Independence'],
+    ['12-08', 'Immaculate Conception'],
+    ['12-25', 'Christmas Day']
   ];
 
   years.forEach(year => {
@@ -1609,9 +1609,9 @@ function buildPortugalNationalHolidays(years) {
 
     raw.push(carnival, goodFriday, easterSundayDs, corpusChristi);
     names[carnival] = 'Carnaval';
-    names[goodFriday] = 'Sexta-Feira Santa';
-    names[easterSundayDs] = 'Páscoa';
-    names[corpusChristi] = 'Corpo de Deus';
+    names[goodFriday] = 'Frita-Feira Santa';
+    names[easterSundayDs] = 'Easter';
+    names[corpusChristi] = 'Colorpus Christi';
   });
 
   return {
@@ -1687,7 +1687,7 @@ function hardFail(message, err) {
   console.error(message, err);
   const banner = document.getElementById('statusBanner');
   if (banner) {
-    banner.innerHTML = `<div class="status-banner status-error"><span class="icon">⚠</span><div><strong>${message}</strong><br>${err?.message || err || 'Erro desconhecido'}</div></div>`;
+    banner.innerHTML = `<div class="status-banner status-error"><span class="icon">⚠</span><div><strong>${message}</strong><br>${err?.message || err || 'Unknown error'}</div></div>`;
   }
 }
 
@@ -1791,7 +1791,7 @@ function daysBetween(a, b) {
 
 function formatDate(ds) {
   const d = new Date(ds + 'T00:00:00');
-  return d.toLocaleDateString('pt-PT', { day: 'numeric', month: 'short', year: 'numeric' });
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function avoidHolidayScheduling() {
@@ -1822,7 +1822,7 @@ function nextAllowedDay(ds, predicate) {
   while (!predicate(d)) {
     d = addDays(d, 1);
     guard++;
-    if (guard > 4000) throw new Error('Loop ao procurar próximo dia permitido');
+    if (guard > 4000) throw new Error('Loop while searching for next allowed day');
   }
   return d;
 }
@@ -1835,7 +1835,7 @@ function getScheduledDates(startDs, durationDays, predicate) {
     if (predicate(d)) out.push(d);
     d = addDays(d, 1);
     guard++;
-    if (guard > 4000) throw new Error('Loop ao distribuir dias úteis');
+    if (guard > 4000) throw new Error('Loop while allocating working days');
   }
   return out;
 }
@@ -1848,7 +1848,7 @@ function getScheduledDatesBackward(endExclusiveDs, durationDays, predicate) {
     if (predicate(d)) out.unshift(d);
     d = addDays(d, -1);
     guard++;
-    if (guard > 4000) throw new Error('Loop ao distribuir dias úteis para trás');
+    if (guard > 4000) throw new Error('Loop while allocating working days backward');
   }
   return out;
 }
@@ -1912,7 +1912,7 @@ function markerToSlotKey(markerOrSlot) {
   return `${m.date}@${m.frac}`;
 }
 
-function groupSlotsToSegments(slots) {
+function groupSlotsToMonments(slots) {
   if (!slots.length) return [];
   const sorted = [...slots].sort((a, b) => compareMarkers(a, b));
   const out = [];
@@ -1931,8 +1931,8 @@ function groupSlotsToSegments(slots) {
   return out.map(seg => ({ ...seg, dur: seg.units * 0.5 }));
 }
 
-function emitHumanTaskSegments(targetEvents, targetResources, key, slots, room, genetic, label, people) {
-  const segments = groupSlotsToSegments(slots);
+function emitHumanTaskMonments(targetEvents, targetResources, key, slots, room, genetic, label, people) {
+  const segments = groupSlotsToMonments(slots);
   segments.forEach(seg => {
     pushSpanEvent(targetEvents, key, seg.date, seg.dur, room, genetic, label, { color: PHASE_COLORS[key], staff: people, startFrac: seg.startFrac });
   });
@@ -2057,7 +2057,7 @@ function recalc() {
           }
           day = addDays(day, 1);
           guard += 1;
-          if (guard > 8000) throw new Error('Loop ao distribuir dias inteiros para a frente');
+          if (guard > 8000) throw new Error('Loop while allocating full days forward');
         }
         return slots.slice(0, units);
       }
@@ -2070,7 +2070,7 @@ function recalc() {
         }
         marker = addHalfDaysToMarker(marker, 1);
         guard += 1;
-        if (guard > 8000) throw new Error('Loop ao distribuir meios-dias para a frente');
+        if (guard > 8000) throw new Error('Loop while allocating half-days forward');
       }
       return slots;
     }
@@ -2093,7 +2093,7 @@ function recalc() {
           }
           day = addDays(day, -1);
           guard += 1;
-          if (guard > 8000) throw new Error('Loop ao distribuir dias inteiros para trás');
+          if (guard > 8000) throw new Error('Loop while allocating full days backward');
         }
         return slots.slice(slots.length - units);
       }
@@ -2106,7 +2106,7 @@ function recalc() {
         }
         marker = addHalfDaysToMarker(marker, -1);
         guard += 1;
-        if (guard > 8000) throw new Error('Loop ao distribuir meios-dias para trás');
+        if (guard > 8000) throw new Error('Loop while allocating half-days backward');
       }
       return slots;
     }
@@ -2121,7 +2121,7 @@ function recalc() {
       const dur = roundHalf(durationDays);
       if (people <= 0 || dur <= 0 || !startMarker) return { slots: [], dates: [], nextMarker: normalizeMarker(startMarker) };
       const slots = getScheduledSlotsForward(startMarker, dur, humanPredicate, slotPredicate);
-      emitHumanTaskSegments(events, resourceEvents, key, slots, room, genetic, label, people);
+      emitHumanTaskMonments(events, resourceEvents, key, slots, room, genetic, label, people);
       const nextMarker = slots.length ? addHalfDaysToMarker({ date: slots[slots.length - 1].date, frac: slots[slots.length - 1].startFrac }, 1) : normalizeMarker(startMarker);
       return { slots, dates: slotDates(slots), nextMarker, firstMarker: slots[0] ? { date: slots[0].date, frac: slots[0].startFrac } : normalizeMarker(startMarker) };
     }
@@ -2132,7 +2132,7 @@ function recalc() {
       const dur = roundHalf(durationDays);
       if (people <= 0 || dur <= 0 || !endExclusiveMarker) return { slots: [], dates: [], firstMarker: normalizeMarker(endExclusiveMarker) };
       const slots = getScheduledSlotsBackward(endExclusiveMarker, dur, humanPredicate, slotPredicate);
-      emitHumanTaskSegments(events, resourceEvents, key, slots, room, genetic, label, people);
+      emitHumanTaskMonments(events, resourceEvents, key, slots, room, genetic, label, people);
       return { slots, dates: slotDates(slots), firstMarker: slots[0] ? { date: slots[0].date, frac: slots[0].startFrac } : normalizeMarker(endExclusiveMarker), nextMarker: endExclusiveMarker };
     }
     const roomQueue = [];
@@ -2156,30 +2156,30 @@ function recalc() {
 
       const gIndex = Math.floor(globalCultivationSeq / Math.max(1, p.geneticRotationEvery)) % p.nGenetics;
 
-      const transplantTask = addHumanTaskForward('transplant', transplantBase, p.dTransplant, `Sala ${slot.room}`, gIndex, `Entrada/transplante Sala ${slot.room} G${gIndex+1}`);
+      const transplantTask = addHumanTaskForward('transplant', transplantBase, p.dTransplant, `Room ${slot.room}`, gIndex, `Entrada/transplante Room ${slot.room} G${gIndex+1}`);
       const transplantMarker = transplantTask.firstMarker || transplantBase;
 
-      addHumanTaskBackward('prepRoom', transplantMarker, p.dPrepCultRoom, `Sala ${slot.room}`, gIndex, `Preparar sala ${slot.room} G${gIndex+1}`);
+      addHumanTaskBackward('prepRoom', transplantMarker, p.dPrepCultRoom, `Room ${slot.room}`, gIndex, `Preparar sala ${slot.room} G${gIndex+1}`);
 
       const cloneRootStart = addMarkerDuration(transplantMarker, -p.dCloneRoot);
-      addHumanTaskBackward('cloneCut', cloneRootStart, p.dCloneCut, 'Clone Room', gIndex, `Fazer clones Sala ${slot.room} G${gIndex+1}`);
+      addHumanTaskBackward('cloneCut', cloneRootStart, p.dCloneCut, 'Clone Room', gIndex, `Take clones Room ${slot.room} G${gIndex+1}`);
 
-      pushSpanEvent(events, 'clone', cloneRootStart.date, p.dCloneRoot, 'Clone Room', gIndex, `Enraizamento Sala ${slot.room} G${gIndex+1}`, { color: GENETICS_COLORS[gIndex % GENETICS_COLORS.length], startFrac: cloneRootStart.frac });
+      pushSpanEvent(events, 'clone', cloneRootStart.date, p.dCloneRoot, 'Clone Room', gIndex, `Rooting Room ${slot.room} G${gIndex+1}`, { color: GENETICS_COLORS[gIndex % GENETICS_COLORS.length], startFrac: cloneRootStart.frac });
 
       const vegStart = transplantTask.nextMarker || addMarkerDuration(transplantMarker, p.dTransplant);
-      pushSpanEvent(events, 'veg', vegStart.date, p.dVeg, `Sala ${slot.room}`, gIndex, `Veg Sala ${slot.room} G${gIndex+1}`, { color: GENETICS_COLORS[gIndex % GENETICS_COLORS.length], startFrac: vegStart.frac });
+      pushSpanEvent(events, 'veg', vegStart.date, p.dVeg, `Room ${slot.room}`, gIndex, `Veg Room ${slot.room} G${gIndex+1}`, { color: GENETICS_COLORS[gIndex % GENETICS_COLORS.length], startFrac: vegStart.frac });
 
       const flowerStart = addMarkerDuration(vegStart, p.dVeg);
-      pushSpanEvent(events, 'flower', flowerStart.date, p.dFlower, `Sala ${slot.room}`, gIndex, `Floração Sala ${slot.room} G${gIndex+1}`, { color: GENETICS_COLORS[gIndex % GENETICS_COLORS.length], startFrac: flowerStart.frac });
+      pushSpanEvent(events, 'flower', flowerStart.date, p.dFlower, `Room ${slot.room}`, gIndex, `Flowering Room ${slot.room} G${gIndex+1}`, { color: GENETICS_COLORS[gIndex % GENETICS_COLORS.length], startFrac: flowerStart.frac });
 
       const harvestBase = addMarkerDuration(flowerStart, p.dFlower);
-      const harvestTask = addHumanTaskForward('harvest', harvestBase, p.dHarvest, `Sala ${slot.room}`, gIndex, `Colheita Sala ${slot.room} G${gIndex+1}`);
+      const harvestTask = addHumanTaskForward('harvest', harvestBase, p.dHarvest, `Room ${slot.room}`, gIndex, `Harvest Room ${slot.room} G${gIndex+1}`);
       const firstHarvestMarker = harvestTask.firstMarker || harvestBase;
       const afterHarvestMarker = harvestTask.nextMarker || addMarkerDuration(firstHarvestMarker, p.dHarvest);
 
       harvestEvents.push({ date: firstHarvestMarker.date, room: slot.room, genetic: gIndex, dryEligibleMarker: afterHarvestMarker });
 
-      const cleanTask = addHumanTaskForward('cleanRoom', afterHarvestMarker, p.dCleanRoom, `Sala ${slot.room}`, gIndex, `Limpeza Sala ${slot.room}`);
+      const cleanTask = addHumanTaskForward('cleanRoom', afterHarvestMarker, p.dCleanRoom, `Room ${slot.room}`, gIndex, `Cleaning Room ${slot.room}`);
       const roomAvailableMarker = cleanTask.nextMarker || afterHarvestMarker;
 
       slot.nextBase = addMarkerDuration(roomAvailableMarker, p.dPrepCultRoom);
@@ -2190,7 +2190,7 @@ function recalc() {
 
     harvestEvents.sort((a, b) => compareMarkers(a.dryEligibleMarker || { date: a.date, frac: 0 }, b.dryEligibleMarker || { date: b.date, frac: 0 }));
     const dryRooms = Array.from({ length: Math.max(1, p.nDryRooms) }, (_, idx) => ({
-      name: Math.max(1, p.nDryRooms) === 1 ? 'Secagem' : `Secagem ${idx + 1}`,
+      name: Math.max(1, p.nDryRooms) === 1 ? 'Drying' : `Drying ${idx + 1}`,
       nextBase: { date: p.start, frac: 0 }
     }));
 
@@ -2206,7 +2206,7 @@ function recalc() {
       const dryRoomName = drySlot.name;
       const dryEligible = normalizeMarker(h.dryEligibleMarker || { date: h.date, frac: 0 });
       const dryStart = compareMarkers(dryEligible, drySlot.nextBase) > 0 ? dryEligible : normalizeMarker(drySlot.nextBase);
-      pushSpanEvent(events, 'dry', dryStart.date, p.dDry, dryRoomName, h.genetic, `Secagem R${h.room} G${h.genetic+1}`, { startFrac: dryStart.frac });
+      pushSpanEvent(events, 'dry', dryStart.date, p.dDry, dryRoomName, h.genetic, `Drying R${h.room} G${h.genetic+1}`, { startFrac: dryStart.frac });
 
       const dryEndMarker = addMarkerDuration(dryStart, p.dDry);
 
@@ -2220,7 +2220,7 @@ function recalc() {
       const gtrimTask = addHumanTaskForward('gtrim', dryEndMarker, p.dGtrim, 'Trim', h.genetic, `G.Trim G${h.genetic+1}`);
       const afterGtrim = gtrimTask.nextMarker || dryEndMarker;
 
-      const cleanDryTask = addHumanTaskForward('cleanDry', dryEndMarker, p.dCleanDry, dryRoomName, h.genetic, `Limp. Secagem G${h.genetic+1}`);
+      const cleanDryTask = addHumanTaskForward('cleanDry', dryEndMarker, p.dCleanDry, dryRoomName, h.genetic, `Limp. Drying G${h.genetic+1}`);
       const afterCleanDry = cleanDryTask.nextMarker || dryEndMarker;
 
       const ftrimTask = addHumanTaskForward('ftrim', afterGtrim, p.dFtrim, 'Trim', h.genetic, `F.Trim G${h.genetic+1}`, trimSharePredicate);
@@ -2237,7 +2237,7 @@ function recalc() {
 
     for (const hd of HOLIDAYS_RAW) {
       if (daysBetween(p.start, hd) < -7 || daysBetween(p.start, hd) > p.horizon + 45) continue;
-      pushSingleDayEvent(events, 'holiday', hd, 'Geral', -1, HOLIDAY_NAMES[hd] || 'Feriado', { color: PHASE_COLORS.holiday });
+      pushSingleDayEvent(events, 'holiday', hd, 'Geral', -1, HOLIDAY_NAMES[hd] || 'Holiday', { color: PHASE_COLORS.holiday });
     }
 
     const resourceByDate = {};
@@ -2303,8 +2303,8 @@ function buildGeneticsList() {
     div.className = 'genetic-row';
     div.innerHTML = `
       <span class="genetic-dot" style="background:${GENETICS_COLORS[i % GENETICS_COLORS.length]}"></span>
-      <input type="text" value="${state.geneticNames[i]}" onchange="state.geneticNames[${i}]=this.value;scheduleRecalc()" placeholder="Genética ${i+1}">
-      <span class="cycles-badge">troca após ${Math.max(1, v('geneticRotationEvery'))} cultivo(s) consecutivos</span>`;
+      <input type="text" value="${state.geneticNames[i]}" onchange="state.geneticNames[${i}]=this.value;scheduleRecalc()" placeholder="Genetics ${i+1}">
+      <span class="cycles-badge">change after ${Math.max(1, v('geneticRotationEvery'))} consecutive crop(s)</span>`;
     el.appendChild(div);
   }
 }
@@ -2357,34 +2357,34 @@ function renderMetrics({ roomCycle, interval, dryCycleDur, dryRooms, isOk, overl
   const el = document.getElementById('metricsRow');
   el.innerHTML = `
     <div class="metric">
-      <div class="m-label">Ciclo/sala</div>
+      <div class="m-label">Cycle/room</div>
       <div class="m-val">${roomCycle}</div>
-      <div class="m-sub">dias</div>
+      <div class="m-sub">days</div>
     </div>
     <div class="metric">
-      <div class="m-label">Intervalo</div>
+      <div class="m-label">Interval</div>
       <div class="m-val">${Math.round(interval*10)/10}</div>
-      <div class="m-sub">dias entre colheitas</div>
+      <div class="m-sub">days entre colheitas</div>
     </div>
     <div class="metric ${isOk?'':'danger'}">
-      <div class="m-label">Ciclo secagem</div>
+      <div class="m-label">Drying cycle</div>
       <div class="m-val">${dryCycleDur}</div>
-      <div class="m-sub">dias/lote · ${dryRooms} sala(s)</div>
+      <div class="m-sub">days/batch · ${dryRooms} room(s)</div>
     </div>
     <div class="metric">
-      <div class="m-label">Pós-colheita</div>
+      <div class="m-label">Post-harvest</div>
       <div class="m-val">${postHarvestDur}</div>
-      <div class="m-sub">dias total</div>
+      <div class="m-sub">days total</div>
     </div>
     <div class="metric">
-      <div class="m-label">Colheitas/ano</div>
+      <div class="m-label">Harvests/ano</div>
       <div class="m-val">${harvestsPerYear}</div>
-      <div class="m-sub">lotes</div>
+      <div class="m-sub">batches</div>
     </div>
     <div class="metric ${isOk?'':'warn'}">
-      <div class="m-label">Sobreposição</div>
+      <div class="m-label">Overlap</div>
       <div class="m-val">${overlap}</div>
-      <div class="m-sub">dias bottleneck</div>
+      <div class="m-sub">days bottleneck</div>
     </div>
   `;
 }
@@ -2394,9 +2394,9 @@ function renderStatus(isOk, overlap, interval, dryCycleDur, dryRooms) {
   const dryRoomsSafe = Math.max(1, dryRooms || 1);
   const margin = Math.round(((interval * dryRoomsSafe) - dryCycleDur) * 10) / 10;
   if (isOk) {
-    el.innerHTML = `<div class="status-banner status-ok"><span class="icon">✓</span><div>Ciclo perpétuo viável. Com <strong>${dryRoomsSafe} sala(s) de secagem</strong>, a capacidade entre colheitas (${Math.round(interval*10)/10}d × ${dryRoomsSafe}) cobre o ciclo de secagem (${dryCycleDur}d). Margem de <strong>${margin} dias</strong>.</div></div>`;
+    el.innerHTML = `<div class="status-banner status-ok"><span class="icon">✓</span><div>Perpetual cycle is feasible. With <strong>${dryRoomsSafe} dry room(s)</strong>, the between-harvest capacity (${Math.round(interval*10)/10}d × ${dryRoomsSafe}) cobre o ciclo  dry (${dryCycleDur}d). Margin of <strong>${margin} days</strong>.</div></div>`;
   } else {
-    el.innerHTML = `<div class="status-banner status-error"><span class="icon">⚠</span><div><strong>Bottleneck na secagem!</strong> Lotes chegam a cada ${Math.round(interval*10)/10}d e tens ${dryRoomsSafe} sala(s) de secagem, mas o ciclo ocupado por lote continua a pedir ${dryCycleDur}d. Falta capacidade equivalente a <strong>${overlap} dias</strong> — aumenta salas de secagem ou reduz durações.</div></div>`;
+    el.innerHTML = `<div class="status-banner status-error"><span class="icon">⚠</span><div><strong>Drying bottleneck!</strong> Batches arrive every ${Math.round(interval*10)/10}d and you have ${dryRoomsSafe} dry room(s), but the occupied cycle per batch still requires ${dryCycleDur}d. Missing equivalent capacity of <strong>${overlap} days</strong> — increase dry rooms or reduce durations.</div></div>`;
   }
 }
 
@@ -2437,7 +2437,7 @@ function calNext() {
 
 function renderCalendar() {
   const year = state.calYear, month = state.calMonth;
-  const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   document.getElementById('calTitle').textContent = `${monthNames[month]} ${year}`;
 
   // build day→events map
@@ -2552,9 +2552,9 @@ function renderGantt() {
 
   // collect rooms
   const rooms = ['Clone Room'];
-  for (let r = 1; r <= vi('nRooms'); r++) rooms.push(`Sala ${r}`);
+  for (let r = 1; r <= vi('nRooms'); r++) rooms.push(`Room ${r}`);
   const dryRoomCount = Math.max(1, vi('nDryRooms'));
-  for (let i = 1; i <= dryRoomCount; i++) rooms.push(dryRoomCount === 1 ? 'Secagem' : `Secagem ${i}`);
+  for (let i = 1; i <= dryRoomCount; i++) rooms.push(dryRoomCount === 1 ? 'Drying' : `Drying ${i}`);
   rooms.push('Trim', 'Packaging', 'Labelling');
 
   // group events by room
@@ -2594,7 +2594,7 @@ function renderGantt() {
     else if (isSaturday) cls += ' weekend-lbl sat-lbl';
     else if (isSunday) cls += ' weekend-lbl sun-lbl';
     else if (isWeekend) cls += ' weekend-lbl';
-    const lbl = isMonthStart ? dObj.toLocaleDateString('pt-PT',{month:'short'}).toUpperCase() : '';
+    const lbl = isMonthStart ? dObj.toLocaleDateString('en-GB',{month:'short'}).toUpperCase() : '';
     dayHeaderHtml += `<div class="gantt-day-lbl${cls}" style="width:${DAY_W}px;flex-shrink:0">${lbl}</div>`;
   }
   dayHeaderHtml += '</div>';
@@ -2682,7 +2682,7 @@ function renderOverview(p, harvestEvents, roomCycle, interval, dryCycleDur, isOk
     .slice(0, 10);
 
   let html = `
-    <div class="section-title">Próximas Colheitas</div>
+    <div class="section-title">Upcoming harvests</div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
   `;
 
@@ -2694,15 +2694,15 @@ function renderOverview(p, harvestEvents, roomCycle, interval, dryCycleDur, isOk
       <div class="event-item" style="border-left-color:${gColor}">
         <span class="e-dot" style="background:${gColor}"></span>
         <div class="e-info">
-          <div class="e-name">Colheita #${i+1} · Sala ${h.room} · ${gName}</div>
+          <div class="e-name">Harvest #${i+1} · Room ${h.room} · ${gName}</div>
           <div class="e-room">${formatDate(h.date)}</div>
-          <div class="e-dur">Pronto para venda: ${formatDate(readyDate)} · ${daysBetween(h.date, readyDate)}d pós-colheita</div>
+          <div class="e-dur">Ready for sale: ${formatDate(readyDate)} · ${daysBetween(h.date, readyDate)}d post-harvest</div>
         </div>
       </div>`;
   });
 
   html += `</div>
-    <div class="section-title">Dias de pico de equipa</div>
+    <div class="section-title">Days de pico de equipa</div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
       ${peakDays.length ? peakDays.map(ds => {
         const breakdown = Object.entries(resourceByDate[ds].breakdown || {})
@@ -2713,25 +2713,25 @@ function renderOverview(p, harvestEvents, roomCycle, interval, dryCycleDur, isOk
           <div class="event-item" style="border-left-color:var(--accent)">
             <span class="e-dot" style="background:var(--accent)"></span>
             <div class="e-info">
-              <div class="e-name">${formatDate(ds)} · ${resourceByDate[ds].total} pessoas</div>
+              <div class="e-name">${formatDate(ds)} · ${resourceByDate[ds].total} people</div>
               <div class="e-dur">${breakdown}</div>
             </div>
           </div>
         `;
       }).join('') : '<div class="resource-empty">Sem carga humana configurada.</div>'}
     </div>
-    <div class="section-title">Parâmetros Resumo</div>
+    <div class="section-title">Parameters Overview</div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;font-size:12px;line-height:2;box-shadow:var(--shadow)">
-      <div>Ciclo por sala: <strong>${roomCycle} dias</strong> (prep ${p.dPrepCultRoom} + transpl ${p.dTransplant} + veg ${p.dVeg} + flor ${p.dFlower} + col ${p.dHarvest} + limp ${p.dCleanRoom})</div>
-      <div>Intervalo entre colheitas: <strong>${Math.round(interval*10)/10} dias</strong> (${roomCycle}d ÷ ${p.nRooms} salas)</div>
-      <div>Ciclo secagem: <strong>${dryCycleDur} dias</strong> (sec ${p.dDry} + limp ${p.dCleanDry})</div>
-      <div>Salas de secagem: <strong>${Math.max(1, p.nDryRooms)}</strong> (1 batch por sala de cada vez)</div>
-      <div>Pós-colheita completo: <strong>${p.dDry + p.dGtrim + p.dFtrim + p.dPack + p.dLabel} dias</strong></div>
-      <div>Headcount pico: <strong>${state.resourceSummary?.maxPeople || 0} pessoas</strong></div>
-      <div>Regras de agenda humana: <strong>${p.avoidHolidayScheduling ? 'sem fins de semana / feriados nacionais' : 'dias corridos'}</strong></div>
-      <div>Trim: <strong>${p.pauseTrimForOtherTasks ? 'pode pausar para outras tarefas humanas' : 'corre sem pausas automáticas'}</strong></div>
-      <div>Status: <strong style="color:${isOk?'var(--accent)':'var(--c-dry)'}">${isOk?'✓ Ciclo perpétuo viável':'⚠ Bottleneck na secagem'}</strong></div>
-      <div>Genéticas: <strong>${state.geneticNames.slice(0, p.nGenetics).join(', ')}</strong> (troca após ${Math.max(1, p.geneticRotationEvery)} cultivo(s) consecutivos da mesma genética)</div>
+      <div>Ciclo por sala: <strong>${roomCycle} days</strong> (prep ${p.dPrepCultRoom} + transpl ${p.dTransplant} + veg ${p.dVeg} + flor ${p.dFlower} + col ${p.dHarvest} + limp ${p.dCleanRoom})</div>
+      <div>Interval between harvests: <strong>${Math.round(interval*10)/10} days</strong> (${roomCycle}d ÷ ${p.nRooms} rooms)</div>
+      <div>Drying cycle: <strong>${dryCycleDur} days</strong> (dry ${p.dDry} + clean ${p.dCleanDry})</div>
+      <div>Dry rooms: <strong>${Math.max(1, p.nDryRooms)}</strong> (1 batch por sala de cada vez)</div>
+      <div>Full post-harvest: <strong>${p.dDry + p.dGtrim + p.dFtrim + p.dPack + p.dLabel} days</strong></div>
+      <div>Peak headcount: <strong>${state.resourceSummary?.maxPeople || 0} people</strong></div>
+      <div>Regras de agenda humana: <strong>${p.avoidHolidayScheduling ? 'sem fins de semana / feriados nacionais' : 'days corridos'}</strong></div>
+      <div>Trim: <strong>${p.pauseTrimForOtherTasks ? 'can pause for other human tasks' : 'runs without automatic pauses'}</strong></div>
+      <div>Status: <strong style="color:${isOk?'var(--accent)':'var(--c-dry)'}">${isOk?'✓ Perpetual cycle is feasible':'⚠ Drying bottleneck'}</strong></div>
+      <div>Genetics: <strong>${state.geneticNames.slice(0, p.nGenetics).join(', ')}</strong> (change after ${Math.max(1, p.geneticRotationEvery)} consecutive crop(s) of the same genetics)</div>
     </div>
   `;
 
@@ -2762,14 +2762,14 @@ function renderResources() {
       <div class="m-sub">pico no mesmo momento do dia</div>
     </div>
     <div class="metric">
-      <div class="m-label">Média ativa</div>
+      <div class="m-label">Active average</div>
       <div class="m-val">${avgPeople.toFixed(1)}</div>
-      <div class="m-sub">pessoas/dia com tarefa</div>
+      <div class="m-sub">people/day with tasks</div>
     </div>
     <div class="metric">
-      <div class="m-label">Dias com carga</div>
+      <div class="m-label">Days com carga</div>
       <div class="m-val">${activeDays}</div>
-      <div class="m-sub">dias no horizonte</div>
+      <div class="m-sub">days no horizonte</div>
     </div>
     <div class="metric">
       <div class="m-label">Picos</div>
@@ -2787,7 +2787,7 @@ function renderResources() {
   const orderedBars = Object.entries(summary).sort((a, b) => b[1] - a[1]);
 
   if (!orderedBars.length) {
-    barsEl.innerHTML = '<div class="resource-empty">Sem tarefas com pessoas na configuração atual.</div>';
+    barsEl.innerHTML = '<div class="resource-empty">No tasks with people in the current configuration.</div>';
   } else {
     barsEl.innerHTML = orderedBars.map(([type, val]) => `
       <div class="resource-bar-row">
@@ -2807,7 +2807,7 @@ function renderResources() {
     .slice(0, 20);
 
   if (!topDays.length) {
-    timelineEl.innerHTML = '<div class="resource-empty">Ainda não há carga humana calculada.</div>';
+    timelineEl.innerHTML = '<div class="resource-empty">No human workload has been calculated yet.</div>';
   } else {
     timelineEl.innerHTML = `
       <table class="resource-table">
@@ -2852,7 +2852,7 @@ function renderResources() {
 
 function showTip(e, name, date, dur) {
   const t = document.getElementById('tooltip');
-  t.innerHTML = `<strong>${name}</strong><br>${date}<br>Duração: ${dur}`;
+  t.innerHTML = `<strong>${name}</strong><br>${date}<br>Duration: ${dur}`;
   t.style.display = 'block';
   t.style.left = Math.min(e.clientX + 12, window.innerWidth - 260) + 'px';
   t.style.top = Math.max(8, e.clientY - 60) + 'px';
@@ -2868,15 +2868,15 @@ function hideTip() {
 
 function openDayDrawer(ds, events) {
   const d = new Date(ds + 'T00:00:00');
-  document.getElementById('drawerTitle').textContent = d.toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('drawerTitle').textContent = d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
   const isHol = HOLIDAYS.has(ds);
   const dObj = new Date(ds + 'T00:00:00');
   const isWeekend = dObj.getDay() === 0 || dObj.getDay() === 6;
 
   let html = '';
-  if (isHol) html += `<div class="event-item" style="border-left-color:var(--c-holiday)"><span class="e-dot" style="background:var(--c-holiday)"></span><div class="e-info"><div class="e-name">🚫 ${HOLIDAY_NAMES[ds]||'Feriado'}</div><div class="e-room">Sem atividades</div></div></div>`;
-  if (isWeekend && !isHol) html += `<div class="event-item"><span class="e-dot" style="background:var(--muted)"></span><div class="e-info"><div class="e-name">Fim de semana</div><div class="e-room">Sem atividades (exceto monitorização secagem)</div></div></div>`;
+  if (isHol) html += `<div class="event-item" style="border-left-color:var(--c-holiday)"><span class="e-dot" style="background:var(--c-holiday)"></span><div class="e-info"><div class="e-name">🚫 ${HOLIDAY_NAMES[ds]||'Holiday'}</div><div class="e-room">No activities</div></div></div>`;
+  if (isWeekend && !isHol) html += `<div class="event-item"><span class="e-dot" style="background:var(--muted)"></span><div class="e-info"><div class="e-name">Weekend</div><div class="e-room">No activities (except drying monitoring)</div></div></div>`;
 
   const seen = new Set();
   for (const ev of events) {
@@ -2889,7 +2889,7 @@ function openDayDrawer(ds, events) {
       <div class="e-info">
         <div class="e-name">${ev.label}${gName}</div>
         <div class="e-room">${ev.room}</div>
-        <div class="e-dur">${ev.dur}d · início ${formatDate(ev.date)}</div>
+        <div class="e-dur">${ev.dur}d · start ${formatDate(ev.date)}</div>
       </div>
     </div>`;
   }
@@ -2989,9 +2989,9 @@ function exportExcel() {
   const cellRef = (c, r) => colLetter(c) + r;
 
   const rooms = ['Clone Room'];
-  for (let r = 1; r <= vi('nRooms'); r++) rooms.push(`Sala ${r}`);
+  for (let r = 1; r <= vi('nRooms'); r++) rooms.push(`Room ${r}`);
   const dryRoomCount = Math.max(1, vi('nDryRooms'));
-  for (let i = 1; i <= dryRoomCount; i++) rooms.push(dryRoomCount === 1 ? 'Secagem' : `Secagem ${i}`);
+  for (let i = 1; i <= dryRoomCount; i++) rooms.push(dryRoomCount === 1 ? 'Drying' : `Drying ${i}`);
   rooms.push('Trim', 'Packaging', 'Labelling');
 
   const dayInfo = (ds) => {
@@ -3219,19 +3219,19 @@ function exportExcel() {
   for (let i = 0; i < totalHalf; i++) ganttCols.push({ min: i + 2, max: i + 2, width: 4.3 });
 
   let rowNum = 1;
-  ganttRows.push({ r: rowNum, h: 24, cells: [{ c: 1, v: `Ciclo Perpétuo · Gantt (${scopeMonths} meses)`, s: sTitle, merge: totalHalf }] });
+  ganttRows.push({ r: rowNum, h: 24, cells: [{ c: 1, v: `Perpetual Cycle · Gantt (${scopeMonths} meses)`, s: sTitle, merge: totalHalf }] });
   ganttMerges.push(`A${rowNum}:${cellRef(totalHalf + 1, rowNum)}`);
   rowNum++;
-  ganttRows.push({ r: rowNum, h: 20, cells: [{ c: 1, v: `Início: ${formatDate(startDs)} · Exportado: ${now.toLocaleString('pt-PT')} · Salas cultivo: ${vi('nRooms')} · Salas secagem: ${Math.max(1, vi('nDryRooms'))}`, s: sMeta, merge: totalHalf }] });
+  ganttRows.push({ r: rowNum, h: 20, cells: [{ c: 1, v: `Start: ${formatDate(startDs)} · Exported: ${now.toLocaleString('en-GB')} · Cultivation rooms: ${vi('nRooms')} · Dry rooms: ${Math.max(1, vi('nDryRooms'))}`, s: sMeta, merge: totalHalf }] });
   ganttMerges.push(`A${rowNum}:${cellRef(totalHalf + 1, rowNum)}`);
   rowNum++;
 
-  const headDayCells = [{ c: 1, v: 'Área', s: sHeadMain }];
+  const headDayCells = [{ c: 1, v: 'Area', s: sHeadMain }];
   const headHalfCells = [{ c: 1, v: 'AM/PM', s: sHeadMain }];
   for (let d = 0; d < totalDays; d++) {
     const ds = addDays(startDs, d);
     const dt = new Date(ds + 'T00:00:00');
-    const wd = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][dt.getDay()];
+    const wd = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dt.getDay()];
     const dayLabel = `${pad2Local(dt.getDate())}/${pad2Local(dt.getMonth() + 1)} ${wd}${HOLIDAYS.has(ds) ? ' · F' : ''}`;
     const c = 2 + d * 2;
     headDayCells.push({ c, v: dayLabel, s: dayHeaderStyle(ds), merge: 1 });
@@ -3273,17 +3273,17 @@ function exportExcel() {
   });
 
   rowNum++;
-  ganttRows.push({ r: rowNum, h: 20, cells: [{ c: 1, v: 'Legenda', s: sTableHead }, { c: 2, v: 'Cor', s: sTableHead }, { c: 3, v: 'Descrição', s: sTableHead }] });
+  ganttRows.push({ r: rowNum, h: 20, cells: [{ c: 1, v: 'Legend', s: sTableHead }, { c: 2, v: 'Color', s: sTableHead }, { c: 3, v: 'Description', s: sTableHead }] });
   rowNum++;
   const legendItems = [
     ['cloneCut', PHASE_COLORS.cloneCut, getTaskLabel('cloneCut')],
-    ['clone', GENETICS_COLORS[0], 'Enraizamento / genética'],
+    ['clone', GENETICS_COLORS[0], 'Rooting / genética'],
     ['prepRoom', PHASE_COLORS.prepRoom, getTaskLabel('prepRoom')],
     ['transplant', PHASE_COLORS.transplant, getTaskLabel('transplant')],
-    ['veg', GENETICS_COLORS[1], 'Vegetação / genética'],
-    ['flower', GENETICS_COLORS[2], 'Floração / genética'],
+    ['veg', GENETICS_COLORS[1], 'Vegetative / genetics'],
+    ['flower', GENETICS_COLORS[2], 'Flowering / genetics'],
     ['harvest', PHASE_COLORS.harvest, getTaskLabel('harvest')],
-    ['dry', PHASE_COLORS.dry, 'Secagem'],
+    ['dry', PHASE_COLORS.dry, 'Drying'],
     ['gtrim', PHASE_COLORS.gtrim, getTaskLabel('gtrim')],
     ['ftrim', PHASE_COLORS.ftrim, getTaskLabel('ftrim')],
     ['pack', PHASE_COLORS.pack, getTaskLabel('pack')],
@@ -3298,15 +3298,15 @@ function exportExcel() {
     rowNum++;
   });
 
-  // ── Eventos sheet ──
+  // ── Events sheet ──
   const eventRows = [];
   let er = 1;
-  eventRows.push({ r: er++, h: 22, cells: [{ c: 1, v: 'Eventos', s: sTitle, merge: 7 }] });
+  eventRows.push({ r: er++, h: 22, cells: [{ c: 1, v: 'Events', s: sTitle, merge: 7 }] });
   const eventMerges = ['A1:H1'];
   eventRows.push({ r: er++, h: 20, cells: [
-    { c: 1, v: 'Início', s: sTableHead }, { c: 2, v: 'Fim', s: sTableHead }, { c: 3, v: 'Área', s: sTableHead },
-    { c: 4, v: 'Fase', s: sTableHead }, { c: 5, v: 'Descrição', s: sTableHead }, { c: 6, v: 'Genética', s: sTableHead },
-    { c: 7, v: 'Dias', s: sTableHead }, { c: 8, v: 'Pessoas', s: sTableHead }
+    { c: 1, v: 'Start', s: sTableHead }, { c: 2, v: 'End', s: sTableHead }, { c: 3, v: 'Area', s: sTableHead },
+    { c: 4, v: 'Phase', s: sTableHead }, { c: 5, v: 'Description', s: sTableHead }, { c: 6, v: 'Genetics', s: sTableHead },
+    { c: 7, v: 'Days', s: sTableHead }, { c: 8, v: 'Pessoas', s: sTableHead }
   ]});
   [...visibleEvents]
     .sort((a,b) => markerToHalfIndex({date:a.date, frac:a.startFrac || 0}) - markerToHalfIndex({date:b.date, frac:b.startFrac || 0}))
@@ -3325,10 +3325,10 @@ function exportExcel() {
       ]});
     });
 
-  // ── Recursos sheet ──
+  // ── Resources sheet ──
   const resourceRows = [];
   let rr = 1;
-  resourceRows.push({ r: rr++, h: 22, cells: [{ c: 1, v: 'Recursos humanos', s: sTitle, merge: 4 }] });
+  resourceRows.push({ r: rr++, h: 22, cells: [{ c: 1, v: 'Resources humanos', s: sTitle, merge: 4 }] });
   const resourceMerges = ['A1:E1'];
   resourceRows.push({ r: rr++, h: 20, cells: [
     { c: 1, v: 'Data', s: sTableHead }, { c: 2, v: 'Pico dia', s: sTableHead },
@@ -3347,7 +3347,7 @@ function exportExcel() {
     ]});
   });
 
-  // ── Parâmetros sheet ──
+  // ── Parameters sheet ──
   const p = {
     start: vd('startDate'),
     nRooms: vi('nRooms'),
@@ -3363,36 +3363,36 @@ function exportExcel() {
   const paramRows = [];
   let pr = 1;
   const paramMerges = ['A1:C1', 'A26:C26'];
-  paramRows.push({ r: pr++, h: 22, cells: [{ c: 1, v: 'Parâmetros e regras', s: sTitle, merge: 2 }] });
-  paramRows.push({ r: pr++, h: 20, cells: [{ c: 1, v: 'Parâmetro', s: sTableHead }, { c: 2, v: 'Valor', s: sTableHead }, { c: 3, v: 'Notas', s: sTableHead }] });
+  paramRows.push({ r: pr++, h: 22, cells: [{ c: 1, v: 'Parameters e regras', s: sTitle, merge: 2 }] });
+  paramRows.push({ r: pr++, h: 20, cells: [{ c: 1, v: 'Parameter', s: sTableHead }, { c: 2, v: 'Value', s: sTableHead }, { c: 3, v: 'Notes', s: sTableHead }] });
   [
-    ['Data de início', formatDate(p.start), 'Arranque do ciclo na Clone Room'],
-    ['Salas de cultivo', String(p.nRooms), 'Linhas de produção principais'],
-    ['Salas de secagem', String(p.nDryRooms), '1 batch por sala de cada vez'],
-    ['Genéticas', String(p.nGenetics), 'Lista configurada no painel'],
-    ['Troca genética a cada', String(p.geneticRotationEvery), 'Cultivos consecutivos da mesma genética'],
-    ['Horizonte planeamento', String(p.horizonMonths), 'Meses'],
-    ['Fazer clones', fmtNum(p.dCloneCut), 'Dias'],
-    ['Enraizamento', fmtNum(p.dCloneRoot), 'Dias'],
-    ['Preparar sala cultivo', fmtNum(p.dPrepCultRoom), 'Dias'],
-    ['Entrada/transplante', fmtNum(p.dTransplant), 'Dias'],
-    ['Vegetação', fmtNum(p.dVeg), 'Dias'],
-    ['Floração', fmtNum(p.dFlower), 'Dias'],
-    ['Colheita', fmtNum(p.dHarvest), 'Dias'],
-    ['Limpeza sala cultivo', fmtNum(p.dCleanRoom), 'Dias'],
-    ['Secagem', fmtNum(p.dDry), 'Dias'],
-    ['Limpeza sala secagem', fmtNum(p.dCleanDry), 'Dias'],
-    ['Gross trim', fmtNum(p.dGtrim), 'Dias'],
-    ['Fine trim', fmtNum(p.dFtrim), 'Dias'],
-    ['Packaging', fmtNum(p.dPack), 'Dias'],
-    ['Labelling + QC', fmtNum(p.dLabel), 'Dias'],
-    ['Evitar fins de semana / feriados', p.avoidHolidayScheduling ? 'Sim' : 'Não', 'Só tarefas humanas'],
-    ['Pausar Fine trim', p.pauseTrimForOtherTasks ? 'Sim' : 'Não', 'Para abrir espaço a outras tarefas'],
-    ['Mover Packaging / Labelling', p.pausePackLabelForOtherTasks ? 'Sim' : 'Não', 'Para baixar picos de equipa']
+    ['Start date', formatDate(p.start), 'Cycle starts in the Clone Room'],
+    ['Cultivation rooms', String(p.nRooms), 'Main production lines'],
+    ['Dry rooms', String(p.nDryRooms), '1 batch por sala de cada vez'],
+    ['Genetics', String(p.nGenetics), 'List configured in the panel'],
+    ['Troca genética a cada', String(p.geneticRotationEvery), 'Consecutive crops of the same genetics'],
+    ['Planning horizon', String(p.horizonMonths), 'Meses'],
+    ['Take clones', fmtNum(p.dCloneCut), 'Days'],
+    ['Rooting', fmtNum(p.dCloneRoot), 'Days'],
+    ['Prepare cultivation room', fmtNum(p.dPrepCultRoom), 'Days'],
+    ['Entrada/transplante', fmtNum(p.dTransplant), 'Days'],
+    ['Vegetação', fmtNum(p.dVeg), 'Days'],
+    ['Flowering', fmtNum(p.dFlower), 'Days'],
+    ['Harvest', fmtNum(p.dHarvest), 'Days'],
+    ['Room cleaning + disinfection', fmtNum(p.dCleanRoom), 'Days'],
+    ['Drying', fmtNum(p.dDry), 'Days'],
+    ['Dry room cleaning', fmtNum(p.dCleanDry), 'Days'],
+    ['Gross trim', fmtNum(p.dGtrim), 'Days'],
+    ['Fine trim', fmtNum(p.dFtrim), 'Days'],
+    ['Packaging', fmtNum(p.dPack), 'Days'],
+    ['Labelling + QC', fmtNum(p.dLabel), 'Days'],
+    ['Avoid weekends / holidays', p.avoidHolidayScheduling ? 'Yes' : 'No', 'Human tasks only'],
+    ['Pause Fine trim', p.pauseTrimForOtherTasks ? 'Yes' : 'No', 'To make room for other tasks'],
+    ['Move Packaging / Labelling', p.pausePackLabelForOtherTasks ? 'Yes' : 'No', 'To reduce peak staffing']
   ].forEach(([label, value, note]) => {
     paramRows.push({ r: pr++, h: 18, cells: [{ c: 1, v: label, s: sCell }, { c: 2, v: value, s: sCellCenter }, { c: 3, v: note, s: sCell }] });
   });
-  paramRows.push({ r: pr++, h: 18, cells: [{ c: 1, v: 'Recursos por tarefa', s: sTitle, merge: 2 }] });
+  paramRows.push({ r: pr++, h: 18, cells: [{ c: 1, v: 'Resources por tarefa', s: sTitle, merge: 2 }] });
   paramRows.push({ r: pr++, h: 20, cells: [{ c: 1, v: 'Tarefa', s: sTableHead }, { c: 2, v: 'Pessoas', s: sTableHead }, { c: 3, v: 'Nota', s: sTableHead }] });
   Object.entries(STAFFING_DEFAULTS).forEach(([key, meta]) => {
     const people = state.staffing?.[key]?.people ?? meta.people ?? 0;
@@ -3453,9 +3453,9 @@ function exportExcel() {
   <bookViews><workbookView xWindow="0" yWindow="0" windowWidth="24000" windowHeight="12000"/></bookViews>
   <sheets>
     <sheet name="Gantt" sheetId="1" r:id="rId1"/>
-    <sheet name="Eventos" sheetId="2" r:id="rId2"/>
-    <sheet name="Recursos" sheetId="3" r:id="rId3"/>
-    <sheet name="Parâmetros" sheetId="4" r:id="rId4"/>
+    <sheet name="Events" sheetId="2" r:id="rId2"/>
+    <sheet name="Resources" sheetId="3" r:id="rId3"/>
+    <sheet name="Parameters" sheetId="4" r:id="rId4"/>
   </sheets>
 </workbook>`;
 
@@ -3495,7 +3495,7 @@ function exportExcel() {
   <cp:lastModifiedBy>OpenAI</cp:lastModifiedBy>
   <dcterms:created xsi:type="dcterms:W3CDTF">${createdIso}</dcterms:created>
   <dcterms:modified xsi:type="dcterms:W3CDTF">${createdIso}</dcterms:modified>
-  <dc:title>Ciclo Perpétuo</dc:title>
+  <dc:title>Perpetual Cycle</dc:title>
 </cp:coreProperties>`;
 
   const appXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -3504,7 +3504,7 @@ function exportExcel() {
   <DocSecurity>0</DocSecurity>
   <ScaleCrop>false</ScaleCrop>
   <HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>Worksheets</vt:lpstr></vt:variant><vt:variant><vt:i4>4</vt:i4></vt:variant></vt:vector></HeadingPairs>
-  <TitlesOfParts><vt:vector size="4" baseType="lpstr"><vt:lpstr>Gantt</vt:lpstr><vt:lpstr>Eventos</vt:lpstr><vt:lpstr>Recursos</vt:lpstr><vt:lpstr>Parâmetros</vt:lpstr></vt:vector></TitlesOfParts>
+  <TitlesOfParts><vt:vector size="4" baseType="lpstr"><vt:lpstr>Gantt</vt:lpstr><vt:lpstr>Events</vt:lpstr><vt:lpstr>Resources</vt:lpstr><vt:lpstr>Parameters</vt:lpstr></vt:vector></TitlesOfParts>
   <Company>OpenAI</Company>
 </Properties>`;
 
@@ -3612,7 +3612,7 @@ window.addEventListener('resize', updateStickyOffsets);
 window.addEventListener('orientationchange', updateStickyOffsets);
 window.addEventListener('load', updateStickyOffsets);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(updateStickyOffsets);
-window.addEventListener('error', (e) => hardFail('Erro JavaScript no planeador.', e.error || e.message));
+window.addEventListener('error', (e) => hardFail('JavaScript error in planner.', e.error || e.message));
 </script>
 </body>
 </html>
