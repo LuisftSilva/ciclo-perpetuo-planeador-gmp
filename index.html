@@ -41,6 +41,54 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ── ANTI-COPY PROTECTION ── */
+body {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+/* Allow selection only in input/textarea so users can edit */
+input, textarea, select, [contenteditable] {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+/* Disable image/element drag */
+img, a { -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: none; -o-user-drag: none; user-drag: none; }
+/* Watermark */
+.wm {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0.035;
+  background-image: repeating-linear-gradient(
+    -25deg,
+    transparent 0,
+    transparent 220px,
+    rgba(45,90,39,0.9) 220px,
+    rgba(45,90,39,0.9) 640px
+  );
+  display: none;
+}
+body.wm-on .wm { display: block; }
+.wm-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-25deg);
+  font-family: 'Fraunces', serif;
+  font-size: 62px;
+  font-weight: 700;
+  color: #2d5a27;
+  white-space: nowrap;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
 input, select, button { min-width: 0; }
 input[type=number] { -moz-appearance: textfield; }
 input[type=number]::-webkit-outer-spin-button,
@@ -132,6 +180,33 @@ body {
 }
 
 .btn-primary:hover { filter: brightness(1.1); }
+
+/* ── LANGUAGE SWITCHER ── */
+.lang-switcher {
+  display: flex;
+  background: rgba(255,255,255,0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.lang-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.6);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 6px 9px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.05em;
+  min-width: 30px;
+}
+.lang-btn:hover { color: white; background: rgba(255,255,255,0.1); }
+.lang-btn.active { background: var(--accent2); color: white; }
+.lang-btn + .lang-btn { border-left: 1px solid rgba(255,255,255,0.15); }
+.lang-btn.active + .lang-btn,
+.lang-btn + .lang-btn.active { border-left-color: transparent; }
 
 /* ── TAB NAV ── */
 .tab-nav {
@@ -1090,27 +1165,35 @@ body {
 </head>
 <body>
 
+<!-- Watermark (hidden by default, can be toggled) -->
+<div class="wm" id="watermark"><div class="wm-text">CONFIDENCIAL</div></div>
+
 <div class="tooltip" id="tooltip"></div>
 
 <!-- HEADER -->
 <div class="header">
   <div class="header-left">
-    <h1>Perpetual Cycle</h1>
-    <span>GMP Planner · Portugal</span>
+    <h1 data-i18n="app.title">Perpetual Cycle</h1>
+    <span data-i18n="app.subtitle">GMP Planner · Portugal</span>
   </div>
   <div class="header-actions">
-    <button class="btn btn-ghost" onclick="exportExcel()">⬇ Excel</button>
-    <button class="btn btn-primary" onclick="scheduleRecalc()">↺ Refresh</button>
+    <div class="lang-switcher">
+      <button class="lang-btn" data-lang="pt" onclick="setLang('pt')">PT</button>
+      <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" data-lang="fr" onclick="setLang('fr')">FR</button>
+    </div>
+    <button class="btn btn-ghost" onclick="exportExcel()" data-i18n="btn.excel">⬇ Excel</button>
+    <button class="btn btn-primary" onclick="scheduleRecalc()" data-i18n="btn.refresh">↺ Refresh</button>
   </div>
 </div>
 
 <!-- TABS -->
 <div class="tab-nav">
-  <div class="tab active" onclick="switchTab('params')">⚙ Parameters</div>
-  <div class="tab" onclick="switchTab('calendar')">📅 Calendar</div>
-  <div class="tab" onclick="switchTab('gantt')">📊 Gantt</div>
-  <div class="tab" onclick="switchTab('resources')">👥 Resources</div>
-  <div class="tab" onclick="switchTab('overview')">📋 Overview</div>
+  <div class="tab active" onclick="switchTab('params')" data-i18n="tab.params">⚙ Parameters</div>
+  <div class="tab" onclick="switchTab('calendar')" data-i18n="tab.calendar">📅 Calendar</div>
+  <div class="tab" onclick="switchTab('gantt')" data-i18n="tab.gantt">📊 Gantt</div>
+  <div class="tab" onclick="switchTab('resources')" data-i18n="tab.resources">👥 Resources</div>
+  <div class="tab" onclick="switchTab('overview')" data-i18n="tab.overview">📋 Overview</div>
 </div>
 
 <!-- CONTENT -->
@@ -1123,13 +1206,13 @@ body {
 
       <!-- Start & Rooms -->
       <div class="param-card">
-        <h3><span class="dot" style="background:var(--accent)"></span>General Setup</h3>
+        <h3><span class="dot" style="background:var(--accent)"></span><span data-i18n="card.general">General Setup</span></h3>
         <div class="param-row">
-          <label>Start date<small>First cycle: take clones</small></label>
+          <label><span data-i18n="p.startDate">Start date</span><small data-i18n="p.startDate.s">First cycle: take clones</small></label>
           <input type="date" class="date-input" id="startDate" value="2026-05-25">
         </div>
         <div class="param-row">
-          <label>Cultivation rooms</label>
+          <label data-i18n="p.nRooms">Cultivation rooms</label>
           <div class="num-input">
             <button onclick="adj('nRooms',-1)">−</button>
             <input type="number" id="nRooms" value="2" min="1" max="8" oninput="scheduleRecalc()">
@@ -1137,7 +1220,7 @@ body {
           </div>
         </div>
         <div class="param-row">
-          <label>Available genetics<small>How many are in rotation</small></label>
+          <label><span data-i18n="p.nGenetics">Available genetics</span><small data-i18n="p.nGenetics.s">How many are in rotation</small></label>
           <div class="num-input">
             <button onclick="adj('nGenetics',-1)">−</button>
             <input type="number" id="nGenetics" value="5" min="1" max="10" oninput="scheduleRecalc()">
@@ -1145,7 +1228,7 @@ body {
           </div>
         </div>
         <div class="param-row">
-          <label>Change genetics every<small>No. of consecutive crops for the same genetics</small></label>
+          <label><span data-i18n="p.geneticRot">Change genetics every</span><small data-i18n="p.geneticRot.s">No. of consecutive crops for the same genetics</small></label>
           <div class="num-input">
             <button onclick="adj('geneticRotationEvery',-1)">−</button>
             <input type="number" id="geneticRotationEvery" value="3" min="1" max="12" oninput="scheduleRecalc()">
@@ -1154,7 +1237,7 @@ body {
           </div>
         </div>
         <div class="param-row">
-          <label>Planning horizon<small>In months</small></label>
+          <label><span data-i18n="p.horizon">Planning horizon</span><small data-i18n="p.horizon.s">In months</small></label>
           <div class="num-input">
             <button onclick="adj('horizonMonths',-1)">−</button>
             <input type="number" id="horizonMonths" value="24" min="3" max="36" oninput="scheduleRecalc()">
@@ -1166,21 +1249,21 @@ body {
 
       <!-- Clone room -->
       <div class="param-card">
-        <h3><span class="dot" style="background:var(--c-clone)"></span>Clone Room</h3>
+        <h3><span class="dot" style="background:var(--c-clone)"></span><span data-i18n="card.clone">Clone Room</span></h3>
         <div class="param-row">
-          <label>Take clones<small>Tarefa humana na sala de clones</small></label>
+          <label><span data-i18n="p.dCloneCut">Take clones</span><small data-i18n="p.dCloneCut.s">Human task in clone room</small></label>
           <div class="num-input">
             <button onclick="adj('dCloneCut',-1)">−</button>
-            <input type="number" id="dCloneCut" step="0.5" value="1" min="1" max="5" oninput="scheduleRecalc()">
+            <input type="number" id="dCloneCut" step="1" value="1" min="1" max="5" oninput="scheduleRecalc()">
             <button onclick="adj('dCloneCut',1)">+</button>
             <span class="unit">d</span>
           </div>
         </div>
         <div class="param-row">
-          <label>Rooting<small>Propagation time before moving to cultivation</small></label>
+          <label><span data-i18n="p.dCloneRoot">Rooting</span><small data-i18n="p.dCloneRoot.s">Propagation time before moving to cultivation</small></label>
           <div class="num-input">
             <button onclick="adj('dCloneRoot',-1)">−</button>
-            <input type="number" id="dCloneRoot" step="0.5" value="15" min="7" max="21" oninput="scheduleRecalc()">
+            <input type="number" id="dCloneRoot" step="1" value="15" min="7" max="21" oninput="scheduleRecalc()">
             <button onclick="adj('dCloneRoot',1)">+</button>
             <span class="unit">d</span>
           </div>
@@ -1189,57 +1272,57 @@ body {
 
       <!-- Cultivation phases -->
       <div class="param-card">
-        <h3><span class="dot" style="background:var(--c-flower)"></span>Cultivation Room</h3>
+        <h3><span class="dot" style="background:var(--c-flower)"></span><span data-i18n="card.cult">Cultivation Room</span></h3>
         <div class="param-row">
-          <label>Prepare cultivation room<small>Expand blocks / prepare substrate on the previous day</small></label>
+          <label><span data-i18n="p.dPrepCultRoom">Prepare cultivation room</span><small data-i18n="p.dPrepCultRoom.s">Expand blocks / prepare substrate</small></label>
           <div class="num-input">
             <button onclick="adj('dPrepCultRoom',-1)">−</button>
-            <input type="number" id="dPrepCultRoom" step="0.5" value="1" min="1" max="5" oninput="scheduleRecalc()">
+            <input type="number" id="dPrepCultRoom" step="1" value="1" min="1" max="5" oninput="scheduleRecalc()">
             <button onclick="adj('dPrepCultRoom',1)">+</button>
             <span class="unit">d</span>
           </div>
         </div>
         <div class="param-row">
-          <label>Enter cultivation room / transplant<small>Single entry + transplant task</small></label>
+          <label><span data-i18n="p.dTransplant">Enter room / transplant</span><small data-i18n="p.dTransplant.s">Single entry + transplant task</small></label>
           <div class="num-input">
             <button onclick="adj('dTransplant',-1)">−</button>
-            <input type="number" id="dTransplant" step="0.5" value="1" min="1" max="5" oninput="scheduleRecalc()">
+            <input type="number" id="dTransplant" step="1" value="1" min="1" max="5" oninput="scheduleRecalc()">
             <button onclick="adj('dTransplant',1)">+</button>
             <span class="unit">d</span>
           </div>
         </div>
         <div class="param-row">
-          <label>Vegetative growth (18/6)</label>
+          <label data-i18n="p.dVeg">Vegetative growth (18/6)</label>
           <div class="num-input">
             <button onclick="adj('dVeg',-1)">−</button>
-            <input type="number" id="dVeg" step="0.5" value="4" min="1" max="30" oninput="scheduleRecalc()">
+            <input type="number" id="dVeg" step="1" value="4" min="1" max="30" oninput="scheduleRecalc()">
             <button onclick="adj('dVeg',1)">+</button>
             <span class="unit">d</span>
           </div>
         </div>
         <div class="param-row">
-          <label>Flowering (12/12)</label>
+          <label data-i18n="p.dFlower">Flowering (12/12)</label>
           <div class="num-input">
             <button onclick="adj('dFlower',-1)">−</button>
-            <input type="number" id="dFlower" step="0.5" value="55" min="30" max="100" oninput="scheduleRecalc()">
+            <input type="number" id="dFlower" step="1" value="55" min="30" max="100" oninput="scheduleRecalc()">
             <button onclick="adj('dFlower',1)">+</button>
             <span class="unit">d</span>
           </div>
         </div>
         <div class="param-row">
-          <label>Harvest</label>
+          <label data-i18n="p.dHarvest">Harvest</label>
           <div class="num-input">
             <button onclick="adj('dHarvest',-1)">−</button>
-            <input type="number" id="dHarvest" step="0.5" value="3" min="1" max="7" oninput="scheduleRecalc()">
+            <input type="number" id="dHarvest" step="1" value="3" min="1" max="7" oninput="scheduleRecalc()">
             <button onclick="adj('dHarvest',1)">+</button>
             <span class="unit">d</span>
           </div>
         </div>
         <div class="param-row">
-          <label>Room cleaning + disinfection<small>Walls, floor, irrigation, HVAC</small></label>
+          <label><span data-i18n="p.dCleanRoom">Room cleaning + disinfection</span><small data-i18n="p.dCleanRoom.s">Walls, floor, irrigation, HVAC</small></label>
           <div class="num-input">
             <button onclick="adj('dCleanRoom',-1)">−</button>
-            <input type="number" id="dCleanRoom" step="0.5" value="4" min="1" max="14" oninput="scheduleRecalc()">
+            <input type="number" id="dCleanRoom" step="1" value="4" min="1" max="14" oninput="scheduleRecalc()">
             <button onclick="adj('dCleanRoom',1)">+</button>
             <span class="unit">d</span>
           </div>
@@ -1248,18 +1331,18 @@ body {
 
       <!-- Post-harvest -->
       <div class="param-card">
-        <h3><span class="dot" style="background:var(--c-dry)"></span>Pós-Harvest (GMP)</h3>
+        <h3><span class="dot" style="background:var(--c-dry)"></span><span data-i18n="card.post">Post-Harvest (GMP)</span></h3>
         <div class="param-row">
-          <label>Drying<small>18°C / 55-60% RH</small></label>
+          <label><span data-i18n="p.dDry">Drying</span><small data-i18n="p.dDry.s">18°C / 55-60% RH</small></label>
           <div class="num-input">
             <button onclick="adj('dDry',-1)">−</button>
-            <input type="number" id="dDry" step="0.5" value="14" min="7" max="21" oninput="scheduleRecalc()">
+            <input type="number" id="dDry" step="1" value="14" min="7" max="21" oninput="scheduleRecalc()">
             <button onclick="adj('dDry',1)">+</button>
             <span class="unit">d</span>
           </div>
         </div>
         <div class="param-row">
-          <label>Dry rooms<small>Cada sala seca apenas 1 batch de cada vez</small></label>
+          <label><span data-i18n="p.nDryRooms">Dry rooms</span><small data-i18n="p.nDryRooms.s">Each room dries 1 batch at a time</small></label>
           <div class="num-input">
             <button onclick="adj('nDryRooms',-1)">−</button>
             <input type="number" id="nDryRooms" value="1" min="1" max="12" oninput="scheduleRecalc()">
@@ -1267,46 +1350,46 @@ body {
           </div>
         </div>
         <div class="param-row">
-          <label>Dry room cleaning<small>Deep clean 32h</small></label>
+          <label><span data-i18n="p.dCleanDry">Dry room cleaning</span><small data-i18n="p.dCleanDry.s">Deep clean 32h</small></label>
           <div class="num-input">
             <button onclick="adj('dCleanDry',-1)">−</button>
-            <input type="number" id="dCleanDry" step="0.5" value="2" min="1" max="5" oninput="scheduleRecalc()">
+            <input type="number" id="dCleanDry" step="1" value="2" min="1" max="5" oninput="scheduleRecalc()">
             <button onclick="adj('dCleanDry',1)">+</button>
             <span class="unit">d</span>
           </div>
         </div>
         <div class="param-row">
-          <label>Gross trim<small>After drying</small></label>
+          <label data-i18n="p.dGtrim">Gross trim</label>
           <div class="num-input">
             <button onclick="adj('dGtrim',-1)">−</button>
-            <input type="number" id="dGtrim" step="0.5" value="2" min="1" max="5" oninput="scheduleRecalc()">
+            <input type="number" id="dGtrim" step="1" value="2" min="1" max="5" oninput="scheduleRecalc()">
             <button onclick="adj('dGtrim',1)">+</button>
             <span class="unit">d</span>
           </div>
         </div>
         <div class="param-row">
-          <label>Fine trim<small>5 people</small></label>
+          <label><span data-i18n="p.dFtrim">Fine trim</span><small data-i18n="p.dFtrim.s">5 people</small></label>
           <div class="num-input">
             <button onclick="adj('dFtrim',-1)">−</button>
-            <input type="number" id="dFtrim" step="0.5" value="15" min="3" max="30" oninput="scheduleRecalc()">
+            <input type="number" id="dFtrim" step="1" value="15" min="3" max="30" oninput="scheduleRecalc()">
             <button onclick="adj('dFtrim',1)">+</button>
             <span class="unit">d</span>
           </div>
         </div>
         <div class="param-row">
-          <label>Packaging</label>
+          <label data-i18n="p.dPack">Packaging</label>
           <div class="num-input">
             <button onclick="adj('dPack',-1)">−</button>
-            <input type="number" id="dPack" step="0.5" value="4" min="1" max="10" oninput="scheduleRecalc()">
+            <input type="number" id="dPack" step="1" value="4" min="1" max="10" oninput="scheduleRecalc()">
             <button onclick="adj('dPack',1)">+</button>
             <span class="unit">d</span>
           </div>
         </div>
         <div class="param-row">
-          <label>Labelling + QC</label>
+          <label data-i18n="p.dLabel">Labelling + QC</label>
           <div class="num-input">
             <button onclick="adj('dLabel',-1)">−</button>
-            <input type="number" id="dLabel" step="0.5" value="2" min="1" max="5" oninput="scheduleRecalc()">
+            <input type="number" id="dLabel" step="1" value="2" min="1" max="5" oninput="scheduleRecalc()">
             <button onclick="adj('dLabel',1)">+</button>
             <span class="unit">d</span>
           </div>
@@ -1315,29 +1398,29 @@ body {
 
       <!-- Genetics -->
       <div class="param-card">
-        <h3><span class="dot" style="background:var(--c-mother)"></span>Genetics</h3>
+        <h3><span class="dot" style="background:var(--c-mother)"></span><span data-i18n="card.genetics">Genetics</span></h3>
         <div class="genetics-list" id="geneticsList"></div>
       </div>
 
       <!-- Human Resources -->
       <div class="param-card">
-        <h3><span class="dot" style="background:var(--c-pack)"></span>Resources Humanos</h3>
+        <h3><span class="dot" style="background:var(--c-pack)"></span><span data-i18n="card.staffing">Staffing / Resources</span></h3>
         <div class="param-row" style="align-items:flex-start">
           <label class="inline-check">
             <input type="checkbox" id="avoidNationalHolidays" checked onchange="scheduleRecalc()">
-            Avoid weekends and national holidays for human tasks
+            <span data-i18n="p.avoidHolidays">Avoid weekends and national holidays for human tasks</span>
           </label>
         </div>
         <div class="param-row" style="align-items:flex-start">
           <label class="inline-check">
             <input type="checkbox" id="pauseTrimForOtherTasks" checked onchange="scheduleRecalc()">
-            Permitir pausar o fine trim para fazer outras tarefas humanas no mesmo dia
+            <span data-i18n="p.pauseTrim">Pause fine trim to perform other human tasks on the same day</span>
           </label>
         </div>
         <div class="param-row" style="align-items:flex-start">
           <label class="inline-check">
             <input type="checkbox" id="pausePackLabelForOtherTasks" onchange="scheduleRecalc()">
-            Allow Packaging and Labelling to move to free days to reduce peak headcount
+            <span data-i18n="p.pausePack">Allow Packaging and Labelling to move to free days to reduce peak headcount</span>
           </label>
         </div>
         <div class="resource-config-list" id="staffingInputs"></div>
@@ -1367,13 +1450,13 @@ body {
 
     <div class="cal-month" id="calMonth">
       <div class="cal-weekdays">
-        <div class="cal-weekday">Mon</div>
-        <div class="cal-weekday">Tue</div>
-        <div class="cal-weekday">Wed</div>
-        <div class="cal-weekday">Thu</div>
-        <div class="cal-weekday">Fri</div>
-        <div class="cal-weekday weekend">Sat</div>
-        <div class="cal-weekday weekend">Sun</div>
+        <div class="cal-weekday" data-i18n="wd.mon">Mon</div>
+        <div class="cal-weekday" data-i18n="wd.tue">Tue</div>
+        <div class="cal-weekday" data-i18n="wd.wed">Wed</div>
+        <div class="cal-weekday" data-i18n="wd.thu">Thu</div>
+        <div class="cal-weekday" data-i18n="wd.fri">Fri</div>
+        <div class="cal-weekday weekend" data-i18n="wd.sat">Sat</div>
+        <div class="cal-weekday weekend" data-i18n="wd.sun">Sun</div>
       </div>
       <div class="cal-grid" id="calGrid"></div>
     </div>
@@ -1384,15 +1467,16 @@ body {
   <div class="panel" id="panel-gantt">
 
     <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
-      <label style="font-size:11px;color:var(--muted)">Zoom:</label>
+      <label style="font-size:11px;color:var(--muted)" data-i18n="misc.zoom">Zoom:</label>
       <input type="range" id="ganttZoom" min="3" max="16" value="6" oninput="renderGantt()" style="width:120px;accent-color:var(--accent)">
-      <label style="font-size:11px;color:var(--muted)">Mostrar:</label>
+      <label style="font-size:11px;color:var(--muted)" data-i18n="misc.show">Show:</label>
       <select id="ganttScope" onchange="renderGantt()" style="font-family:'DM Mono',monospace;font-size:11px;border:1px solid var(--border);border-radius:6px;padding:4px 8px;background:var(--surface)">
-        <option value="3">3 meses</option>
-        <option value="6" selected>6 meses</option>
-        <option value="12">12 meses</option>
-        <option value="24">24 meses</option>
+        <option value="3">3</option>
+        <option value="6" selected>6</option>
+        <option value="12">12</option>
+        <option value="24">24</option>
       </select>
+      <span style="font-size:11px;color:var(--muted)" data-i18n="misc.months">months</span>
     </div>
 
     <div class="legend-grid" id="ganttLegend"></div>
@@ -1406,22 +1490,20 @@ body {
     <div class="metrics-row" id="resourceMetrics"></div>
     <div class="resource-grid">
       <div class="resource-card">
-        <div class="section-title">Carga por atividade</div>
+        <div class="section-title" data-i18n="res.byTask">Workload by task</div>
         <div class="resource-bars" id="resourceBars"></div>
       </div>
       <div style="display:flex;flex-direction:column;gap:14px">
         <div class="resource-chart-wrap">
-          <div class="section-title">Upcoming critical days</div>
+          <div class="section-title" data-i18n="res.critical">Upcoming critical days</div>
           <div class="resource-table-wrap" style="padding:0;border:none;box-shadow:none">
             <div id="resourceTimeline"></div>
           </div>
         </div>
         <div class="resource-card">
-          <div class="section-title">Legend de recursos</div>
+          <div class="section-title" data-i18n="res.legend">Resource legend</div>
           <div class="resource-legend" id="resourceLegend"></div>
-          <div class="resource-note">
-            The daily total includes only tasks that require people. Passive phases still exist in the plan but do not count toward headcount.
-          </div>
+          <div class="resource-note" data-i18n="res.note">The daily total includes only tasks that require people. Passive phases still exist in the plan but do not count toward headcount.</div>
         </div>
       </div>
     </div>
@@ -1444,6 +1526,433 @@ body {
 </div>
 
 <script>
+// ═══════════════════════════════════════════
+// I18N — Internationalization
+// ═══════════════════════════════════════════
+
+const I18N = {
+  pt: {
+    // header
+    'app.title': 'Ciclo Perpétuo',
+    'app.subtitle': 'Planeador GMP · Portugal',
+    'btn.excel': '⬇ Excel',
+    'btn.refresh': '↺ Atualizar',
+    // tabs
+    'tab.params': '⚙ Parâmetros',
+    'tab.calendar': '📅 Calendário',
+    'tab.gantt': '📊 Gantt',
+    'tab.resources': '👥 Recursos',
+    'tab.overview': '📋 Resumo',
+    // metrics
+    'metric.cycle': 'Ciclo/sala',
+    'metric.days': 'dias',
+    'metric.interval': 'Intervalo',
+    'metric.between': 'dias entre colheitas',
+    'metric.drying': 'Ciclo secagem',
+    'metric.rooms': 'sala(s)',
+    'metric.post': 'Pós-colheita',
+    'metric.total': 'dias total',
+    'metric.perYear': 'Colheitas/ano',
+    'metric.batches': 'lotes',
+    'metric.overlap': 'Sobreposição',
+    'metric.bottleneck': 'dias bottleneck',
+    // status
+    'status.ok': 'Ciclo perpétuo viável. Com <strong>{dryRooms} sala(s) de secagem</strong>, intervalo real entre lotes é <strong>{interval}</strong> e o ciclo de secagem ocupa {dryCycle}d. Margem no pior caso: <strong>{worstMargin} dia(s)</strong>.',
+    'status.err': '<strong>Bottleneck na secagem!</strong> Lotes chegam a cada {interval} e tens {dryRooms} sala(s) de secagem, mas o ciclo por lote ocupa {dryCycle}d. Falta capacidade equivalente a <strong>{overlap} dia(s)</strong> — aumenta salas de secagem ou reduz durações.',
+    // resources
+    'res.peak': 'Pico',
+    'res.peakSub': 'pessoas em simultâneo',
+    'res.avg': 'Média ativa',
+    'res.avgSub': 'pessoas/dia em atividade',
+    'res.active': 'Dias com carga',
+    'res.activeSub': 'dias no horizonte',
+    'res.peaks': 'Datas de pico',
+    'res.noLoad': 'sem carga',
+    'res.byTask': 'Carga por atividade',
+    'res.critical': 'Próximos dias críticos',
+    'res.legend': 'Legenda de recursos',
+    'res.note': 'O total diário inclui apenas tarefas que requerem pessoas. Fases passivas continuam no plano mas não contam para headcount.',
+    'res.noTasks': 'Sem tarefas com pessoas na configuração atual.',
+    'res.noWork': 'Ainda não há carga humana calculada.',
+    'res.date': 'Data',
+    'res.totalHdr': 'Total',
+    'res.breakdown': 'Desagregado',
+    // phases
+    'phase.veg': 'VEG',
+    'phase.flower': 'FLORAÇÃO',
+    'phase.harvest': 'COLHEITA',
+    'phase.dry': 'SECAGEM',
+    'phase.gtrim': 'G.TRIM',
+    'phase.ftrim': 'F.TRIM',
+    'phase.pack': 'PACK',
+    'phase.label': 'ROTULAGEM',
+    'phase.cleanRoom': 'LIMP.SALA',
+    'phase.cleanDry': 'LIMP.SEC',
+    'phase.clone': 'CLONES',
+    'phase.holiday': 'FERIADO',
+    'phase.transplant': 'TRANSPLANTE',
+    'phase.cloneCut': 'FAZER CLONES',
+    'phase.prepRoom': 'PREP.SALA',
+    // overview
+    'over.upcoming': 'Próximas Colheitas',
+    'over.summary': 'Resumo',
+    'over.cycleFmt': 'Ciclo/sala: <b>{rc}d</b> (prep {prep} + transp {tp} + veg {v} + flor {fl} + colh {h} + limp {cl})',
+    'over.intervalFmt': 'Intervalo entre colheitas: <b>{iv}d</b> ({rc}d ÷ {n} salas)',
+    'over.dryFmt': 'Ciclo secagem: <b>{dc}d</b>',
+    'over.statusOk': '✓ Viável',
+    'over.statusErr': '⚠ Bottleneck',
+    'over.status': 'Estado',
+    'over.ready': 'Pronto',
+    'over.post': 'pós-colh.',
+    // calendar / drawer
+    'cal.holiday': '🚫 Feriado',
+    'cal.weekend': 'Fim de semana — sem atividades (exceto monitorização da secagem)',
+    'cal.noEvents': 'Sem eventos neste dia.',
+    // weekdays short
+    'wd.mon': 'Seg', 'wd.tue': 'Ter', 'wd.wed': 'Qua', 'wd.thu': 'Qui', 'wd.fri': 'Sex', 'wd.sat': 'Sáb', 'wd.sun': 'Dom',
+    // misc
+    'misc.show': 'Mostrar',
+    'misc.zoom': 'Zoom',
+    'misc.months': 'meses',
+    // params
+    'card.general': 'Configuração Geral',
+    'card.clone': 'Sala de Clones',
+    'card.cult': 'Sala de Cultivo',
+    'card.post': 'Pós-Colheita (GMP)',
+    'card.dry': 'Sala de Secagem',
+    'card.genetics': 'Genéticas',
+    'card.staffing': 'Pessoal / Recursos',
+    'card.options': 'Opções',
+    'p.startDate': 'Data de início',
+    'p.startDate.s': 'Primeiro ciclo: corte de clones',
+    'p.nRooms': 'Salas de cultivo',
+    'p.nGenetics': 'Genéticas disponíveis',
+    'p.nGenetics.s': 'Quantas estão em rotação',
+    'p.geneticRot': 'Rodar genética a cada',
+    'p.geneticRot.s': 'Nº de ciclos consecutivos da mesma genética',
+    'p.horizon': 'Horizonte de planeamento',
+    'p.horizon.s': 'Em meses',
+    'p.nDryRooms': 'Salas de secagem',
+    'p.nDryRooms.s': 'Com paralelização',
+    'p.dCloneCut': 'Fazer clones',
+    'p.dCloneCut.s': 'Tarefa humana na sala de clones',
+    'p.dCloneRoot': 'Enraizamento',
+    'p.dCloneRoot.s': 'Tempo antes de mover para sala cultivo',
+    'p.dPrepCultRoom': 'Preparar sala de cultivo',
+    'p.dPrepCultRoom.s': 'Expandir blocos / preparar substrato',
+    'p.dTransplant': 'Entrada na sala / transplante',
+    'p.dTransplant.s': 'Tarefa única de entrada + transplante',
+    'p.dVeg': 'Vegetação (18/6)',
+    'p.dFlower': 'Floração (12/12)',
+    'p.dHarvest': 'Colheita',
+    'p.dCleanRoom': 'Limpeza + desinfeção da sala',
+    'p.dCleanRoom.s': 'Paredes, chão, rega, HVAC',
+    'p.dDry': 'Secagem',
+    'p.dDry.s': '18°C / 55-60% RH',
+    'p.dCleanDry': 'Limpeza da sala de secagem',
+    'p.dCleanDry.s': 'Deep clean 32h',
+    'p.dGtrim': 'Gross trim',
+    'p.dFtrim': 'Fine trim',
+    'p.dFtrim.s': '5 pessoas por defeito',
+    'p.dPack': 'Embalamento',
+    'p.dLabel': 'Rotulagem + QC',
+    'p.avoidHolidays': 'Evitar agendar em feriados',
+    'p.pauseTrim': 'Pausar fine trim para outras tarefas',
+    'p.pausePack': 'Pausar pack/label para outras tarefas',
+    'p.people': 'pessoas',
+    'p.cycles': 'ciclos',
+  },
+  en: {
+    'app.title': 'Perpetual Cycle',
+    'app.subtitle': 'GMP Planner · Portugal',
+    'btn.excel': '⬇ Excel',
+    'btn.refresh': '↺ Refresh',
+    'tab.params': '⚙ Parameters',
+    'tab.calendar': '📅 Calendar',
+    'tab.gantt': '📊 Gantt',
+    'tab.resources': '👥 Resources',
+    'tab.overview': '📋 Overview',
+    'metric.cycle': 'Cycle/room',
+    'metric.days': 'days',
+    'metric.interval': 'Interval',
+    'metric.between': 'days between harvests',
+    'metric.drying': 'Drying cycle',
+    'metric.rooms': 'room(s)',
+    'metric.post': 'Post-harvest',
+    'metric.total': 'days total',
+    'metric.perYear': 'Harvests/year',
+    'metric.batches': 'batches',
+    'metric.overlap': 'Overlap',
+    'metric.bottleneck': 'days bottleneck',
+    'status.ok': 'Perpetual cycle is feasible. With <strong>{dryRooms} dry room(s)</strong>, real between-harvest interval is <strong>{interval}</strong> and drying cycle occupies {dryCycle}d. Worst-case margin: <strong>{worstMargin} day(s)</strong>.',
+    'status.err': '<strong>Drying bottleneck!</strong> Batches arrive every {interval} and you have {dryRooms} dry room(s), but cycle per batch requires {dryCycle}d. Missing capacity equivalent to <strong>{overlap} day(s)</strong> — add dry rooms or reduce durations.',
+    'res.peak': 'Peak',
+    'res.peakSub': 'people simultaneously',
+    'res.avg': 'Active average',
+    'res.avgSub': 'people/day on task',
+    'res.active': 'Days with load',
+    'res.activeSub': 'days in horizon',
+    'res.peaks': 'Peak dates',
+    'res.noLoad': 'no load',
+    'res.byTask': 'Workload by task',
+    'res.critical': 'Upcoming critical days',
+    'res.legend': 'Resource legend',
+    'res.note': 'The daily total only includes tasks requiring people. Passive phases stay in the plan but do not count toward headcount.',
+    'res.noTasks': 'No tasks with people in the current configuration.',
+    'res.noWork': 'No human workload calculated yet.',
+    'res.date': 'Date',
+    'res.totalHdr': 'Total',
+    'res.breakdown': 'Breakdown',
+    'phase.veg': 'VEG',
+    'phase.flower': 'FLOWER',
+    'phase.harvest': 'HARVEST',
+    'phase.dry': 'DRYING',
+    'phase.gtrim': 'G.TRIM',
+    'phase.ftrim': 'F.TRIM',
+    'phase.pack': 'PACK',
+    'phase.label': 'LABEL',
+    'phase.cleanRoom': 'CLEAN ROOM',
+    'phase.cleanDry': 'CLEAN DRY',
+    'phase.clone': 'CLONES',
+    'phase.holiday': 'HOLIDAY',
+    'phase.transplant': 'TRANSPLANT',
+    'phase.cloneCut': 'TAKE CLONES',
+    'phase.prepRoom': 'PREP ROOM',
+    'over.upcoming': 'Upcoming Harvests',
+    'over.summary': 'Summary',
+    'over.cycleFmt': 'Cycle/room: <b>{rc}d</b> (prep {prep} + transp {tp} + veg {v} + flower {fl} + harv {h} + clean {cl})',
+    'over.intervalFmt': 'Interval between harvests: <b>{iv}d</b> ({rc}d ÷ {n} rooms)',
+    'over.dryFmt': 'Drying cycle: <b>{dc}d</b>',
+    'over.statusOk': '✓ Feasible',
+    'over.statusErr': '⚠ Bottleneck',
+    'over.status': 'Status',
+    'over.ready': 'Ready',
+    'over.post': 'post-harv.',
+    'cal.holiday': '🚫 Holiday',
+    'cal.weekend': 'Weekend — no activities (except drying monitoring)',
+    'cal.noEvents': 'No events on this day.',
+    'wd.mon': 'Mon', 'wd.tue': 'Tue', 'wd.wed': 'Wed', 'wd.thu': 'Thu', 'wd.fri': 'Fri', 'wd.sat': 'Sat', 'wd.sun': 'Sun',
+    'misc.show': 'Show',
+    'misc.zoom': 'Zoom',
+    'misc.months': 'months',
+    'card.general': 'General Setup',
+    'card.clone': 'Clone Room',
+    'card.cult': 'Cultivation Room',
+    'card.post': 'Post-Harvest (GMP)',
+    'card.dry': 'Drying Room',
+    'card.genetics': 'Genetics',
+    'card.staffing': 'Staffing / Resources',
+    'card.options': 'Options',
+    'p.startDate': 'Start date',
+    'p.startDate.s': 'First cycle: take clones',
+    'p.nRooms': 'Cultivation rooms',
+    'p.nGenetics': 'Available genetics',
+    'p.nGenetics.s': 'How many are in rotation',
+    'p.geneticRot': 'Change genetics every',
+    'p.geneticRot.s': 'Consecutive crops per genetics',
+    'p.horizon': 'Planning horizon',
+    'p.horizon.s': 'In months',
+    'p.nDryRooms': 'Drying rooms',
+    'p.nDryRooms.s': 'With parallelisation',
+    'p.dCloneCut': 'Take clones',
+    'p.dCloneCut.s': 'Human task in clone room',
+    'p.dCloneRoot': 'Rooting',
+    'p.dCloneRoot.s': 'Time before moving to cultivation',
+    'p.dPrepCultRoom': 'Prepare cultivation room',
+    'p.dPrepCultRoom.s': 'Expand blocks / prepare substrate',
+    'p.dTransplant': 'Enter room / transplant',
+    'p.dTransplant.s': 'Single entry + transplant task',
+    'p.dVeg': 'Vegetative (18/6)',
+    'p.dFlower': 'Flowering (12/12)',
+    'p.dHarvest': 'Harvest',
+    'p.dCleanRoom': 'Room cleaning + disinfection',
+    'p.dCleanRoom.s': 'Walls, floor, irrigation, HVAC',
+    'p.dDry': 'Drying',
+    'p.dDry.s': '18°C / 55-60% RH',
+    'p.dCleanDry': 'Dry room cleaning',
+    'p.dCleanDry.s': 'Deep clean 32h',
+    'p.dGtrim': 'Gross trim',
+    'p.dFtrim': 'Fine trim',
+    'p.dFtrim.s': '5 people by default',
+    'p.dPack': 'Packaging',
+    'p.dLabel': 'Labelling + QC',
+    'p.avoidHolidays': 'Avoid scheduling on holidays',
+    'p.pauseTrim': 'Pause fine trim for other tasks',
+    'p.pausePack': 'Pause pack/label for other tasks',
+    'p.people': 'people',
+    'p.cycles': 'cycles',
+  },
+  fr: {
+    'app.title': 'Cycle Perpétuel',
+    'app.subtitle': 'Planificateur GMP · Portugal',
+    'btn.excel': '⬇ Excel',
+    'btn.refresh': '↺ Actualiser',
+    'tab.params': '⚙ Paramètres',
+    'tab.calendar': '📅 Calendrier',
+    'tab.gantt': '📊 Gantt',
+    'tab.resources': '👥 Ressources',
+    'tab.overview': '📋 Résumé',
+    'metric.cycle': 'Cycle/salle',
+    'metric.days': 'jours',
+    'metric.interval': 'Intervalle',
+    'metric.between': 'jours entre récoltes',
+    'metric.drying': 'Cycle séchage',
+    'metric.rooms': 'salle(s)',
+    'metric.post': 'Post-récolte',
+    'metric.total': 'jours total',
+    'metric.perYear': 'Récoltes/an',
+    'metric.batches': 'lots',
+    'metric.overlap': 'Chevauchement',
+    'metric.bottleneck': 'jours goulot',
+    'status.ok': 'Cycle perpétuel viable. Avec <strong>{dryRooms} salle(s) de séchage</strong>, intervalle réel entre lots: <strong>{interval}</strong>, cycle de séchage occupe {dryCycle}j. Marge pire cas: <strong>{worstMargin} jour(s)</strong>.',
+    'status.err': '<strong>Goulot au séchage!</strong> Lots arrivent tous les {interval} et vous avez {dryRooms} salle(s) de séchage, mais cycle par lot exige {dryCycle}j. Capacité manquante équivalente à <strong>{overlap} jour(s)</strong> — ajoutez des salles ou réduisez les durées.',
+    'res.peak': 'Pic',
+    'res.peakSub': 'personnes simultanées',
+    'res.avg': 'Moyenne active',
+    'res.avgSub': 'personnes/jour en tâche',
+    'res.active': 'Jours avec charge',
+    'res.activeSub': 'jours dans l\'horizon',
+    'res.peaks': 'Dates de pic',
+    'res.noLoad': 'sans charge',
+    'res.byTask': 'Charge par activité',
+    'res.critical': 'Prochains jours critiques',
+    'res.legend': 'Légende ressources',
+    'res.note': 'Le total quotidien inclut uniquement les tâches nécessitant du personnel. Les phases passives restent dans le plan sans compter au headcount.',
+    'res.noTasks': 'Aucune tâche avec personnes dans la configuration actuelle.',
+    'res.noWork': 'Aucune charge humaine calculée pour le moment.',
+    'res.date': 'Date',
+    'res.totalHdr': 'Total',
+    'res.breakdown': 'Détail',
+    'phase.veg': 'VEG',
+    'phase.flower': 'FLORAISON',
+    'phase.harvest': 'RÉCOLTE',
+    'phase.dry': 'SÉCHAGE',
+    'phase.gtrim': 'G.TAILLE',
+    'phase.ftrim': 'F.TAILLE',
+    'phase.pack': 'EMB.',
+    'phase.label': 'ÉTIQ.',
+    'phase.cleanRoom': 'NETT.SALLE',
+    'phase.cleanDry': 'NETT.SÉCH.',
+    'phase.clone': 'CLONES',
+    'phase.holiday': 'FÉRIÉ',
+    'phase.transplant': 'TRANSPLANT',
+    'phase.cloneCut': 'BOUTURAGE',
+    'phase.prepRoom': 'PRÉP.SALLE',
+    'over.upcoming': 'Prochaines Récoltes',
+    'over.summary': 'Résumé',
+    'over.cycleFmt': 'Cycle/salle: <b>{rc}j</b> (prép {prep} + transp {tp} + veg {v} + flor {fl} + réc {h} + nett {cl})',
+    'over.intervalFmt': 'Intervalle entre récoltes: <b>{iv}j</b> ({rc}j ÷ {n} salles)',
+    'over.dryFmt': 'Cycle séchage: <b>{dc}j</b>',
+    'over.statusOk': '✓ Viable',
+    'over.statusErr': '⚠ Goulot',
+    'over.status': 'État',
+    'over.ready': 'Prêt',
+    'over.post': 'post-réc.',
+    'cal.holiday': '🚫 Férié',
+    'cal.weekend': 'Week-end — aucune activité (sauf surveillance séchage)',
+    'cal.noEvents': 'Aucun événement ce jour.',
+    'wd.mon': 'Lun', 'wd.tue': 'Mar', 'wd.wed': 'Mer', 'wd.thu': 'Jeu', 'wd.fri': 'Ven', 'wd.sat': 'Sam', 'wd.sun': 'Dim',
+    'misc.show': 'Afficher',
+    'misc.zoom': 'Zoom',
+    'misc.months': 'mois',
+    'card.general': 'Configuration générale',
+    'card.clone': 'Salle de clones',
+    'card.cult': 'Salle de culture',
+    'card.post': 'Post-récolte (GMP)',
+    'card.dry': 'Salle de séchage',
+    'card.genetics': 'Génétiques',
+    'card.staffing': 'Personnel / Ressources',
+    'card.options': 'Options',
+    'p.startDate': 'Date de début',
+    'p.startDate.s': 'Premier cycle: bouturage',
+    'p.nRooms': 'Salles de culture',
+    'p.nGenetics': 'Génétiques disponibles',
+    'p.nGenetics.s': 'Combien sont en rotation',
+    'p.geneticRot': 'Changer génétique tous les',
+    'p.geneticRot.s': 'Cycles consécutifs par génétique',
+    'p.horizon': 'Horizon de planification',
+    'p.horizon.s': 'En mois',
+    'p.nDryRooms': 'Salles de séchage',
+    'p.nDryRooms.s': 'Avec parallélisation',
+    'p.dCloneCut': 'Bouturer',
+    'p.dCloneCut.s': 'Tâche humaine salle de clones',
+    'p.dCloneRoot': 'Enracinement',
+    'p.dCloneRoot.s': 'Temps avant passage en culture',
+    'p.dPrepCultRoom': 'Préparer salle de culture',
+    'p.dPrepCultRoom.s': 'Expansion blocs / préparer substrat',
+    'p.dTransplant': 'Entrée salle / transplantation',
+    'p.dTransplant.s': 'Tâche unique entrée + transplantation',
+    'p.dVeg': 'Végétatif (18/6)',
+    'p.dFlower': 'Floraison (12/12)',
+    'p.dHarvest': 'Récolte',
+    'p.dCleanRoom': 'Nettoyage + désinfection salle',
+    'p.dCleanRoom.s': 'Murs, sol, irrigation, CVC',
+    'p.dDry': 'Séchage',
+    'p.dDry.s': '18°C / 55-60% HR',
+    'p.dCleanDry': 'Nettoyage salle séchage',
+    'p.dCleanDry.s': 'Deep clean 32h',
+    'p.dGtrim': 'Taille grossière',
+    'p.dFtrim': 'Taille fine',
+    'p.dFtrim.s': '5 personnes par défaut',
+    'p.dPack': 'Emballage',
+    'p.dLabel': 'Étiquetage + QC',
+    'p.avoidHolidays': 'Éviter planning jours fériés',
+    'p.pauseTrim': 'Pause taille fine pour autres tâches',
+    'p.pausePack': 'Pause emb./étiq. pour autres tâches',
+    'p.people': 'personnes',
+    'p.cycles': 'cycles',
+  }
+};
+
+let currentLang = localStorage.getItem('ciclo_perpetuo_lang') || 'pt';
+
+function t(key, vars) {
+  const dict = I18N[currentLang] || I18N.pt;
+  let str = dict[key] || I18N.pt[key] || key;
+  if (vars) {
+    Object.keys(vars).forEach(k => {
+      str = str.replace(new RegExp('\\{' + k + '\\}', 'g'), vars[k]);
+    });
+  }
+  return str;
+}
+
+function applyI18n(root) {
+  const scope = root || document;
+  scope.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    el.innerHTML = t(key);
+  });
+  scope.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    el.placeholder = t(key);
+  });
+}
+
+function setLang(lang) {
+  if (!I18N[lang]) lang = 'pt';
+  currentLang = lang;
+  try { localStorage.setItem('ciclo_perpetuo_lang', lang); } catch(e){}
+  // update language selector visual state
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === lang);
+  });
+  // rebuild phase labels from i18n
+  Object.keys(PHASE_LABELS_BASE).forEach(k => {
+    PHASE_LABELS[k] = t('phase.' + k);
+  });
+  applyI18n();
+  scheduleRecalc();
+}
+
+// Base keys for phase labels - translated dynamically
+const PHASE_LABELS_BASE = {
+  veg:'veg', flower:'flower', harvest:'harvest', dry:'dry',
+  gtrim:'gtrim', ftrim:'ftrim', pack:'pack', label:'label',
+  cleanRoom:'cleanRoom', cleanDry:'cleanDry', clone:'clone',
+  holiday:'holiday', transplant:'transplant', cloneCut:'cloneCut', prepRoom:'prepRoom'
+};
+
 // ═══════════════════════════════════════════
 // DATA & STATE
 // ═══════════════════════════════════════════
@@ -1472,21 +1981,11 @@ const PHASE_COLORS = {
 };
 
 const PHASE_LABELS = {
-  veg:'VEG',
-  flower:'FLOR',
-  harvest:'COLHEITA',
-  dry:'SECAGEM',
-  gtrim:'G.TRIM',
-  ftrim:'F.TRIM',
-  pack:'PACK',
-  label:'LABEL',
-  cleanRoom:'LIMP.SALA',
-  cleanDry:'LIMP.SEC',
-  clone:'CLONES',
-  holiday:'FERIADO',
-  transplant:'ENTRADA/TRANSP.',
-  cloneCut:'FAZER CLONES',
-  prepRoom:'PREP.SALA'
+  veg: 'VEG', flower: 'FLOR', harvest: 'COLHEITA', dry: 'SECAGEM',
+  gtrim: 'G.TRIM', ftrim: 'F.TRIM', pack: 'PACK', label: 'LABEL',
+  cleanRoom: 'LIMP.SALA', cleanDry: 'LIMP.SEC', clone: 'CLONES',
+  holiday: 'FERIADO', transplant: 'TRANSPLANTE',
+  cloneCut: 'FAZER CLONES', prepRoom: 'PREP.SALA'
 };
 
 
@@ -1529,7 +2028,7 @@ function normalizeStaffingConfig(raw = {}) {
 }
 
 function getTaskLabel(type) {
-  return STAFFING_DEFAULTS[type]?.label || PHASE_LABELS[type] || type;
+  return PHASE_LABELS[type] || STAFFING_DEFAULTS[type]?.label || type;
 }
 
 let state = {
@@ -1601,6 +2100,11 @@ function buildPortugalNationalHolidays(years) {
       names[ds] = name;
     });
 
+    // Municipal holiday: Vila Verde (13 June)
+    const vilaVerdeDs = `${year}-06-13`;
+    raw.push(vilaVerdeDs);
+    names[vilaVerdeDs] = 'Mun. Vila Verde';
+
     const easter = easterSunday(year);
     const carnival = dsFromDateObj(shiftDateObj(easter, -47));
     const goodFriday = dsFromDateObj(shiftDateObj(easter, -2));
@@ -1609,9 +2113,9 @@ function buildPortugalNationalHolidays(years) {
 
     raw.push(carnival, goodFriday, easterSundayDs, corpusChristi);
     names[carnival] = 'Carnaval';
-    names[goodFriday] = 'Frita-Feira Santa';
+    names[goodFriday] = 'Sexta-Feira Santa';
     names[easterSundayDs] = 'Easter';
-    names[corpusChristi] = 'Colorpus Christi';
+    names[corpusChristi] = 'Corpus Christi';
   });
 
   return {
@@ -1714,7 +2218,7 @@ function vi(id) {
 function vf(id) {
   const raw = parseFloat(document.getElementById(id).value);
   if (!Number.isFinite(raw)) return 0;
-  return Math.max(0, Math.round(raw * 2) / 2);
+  return Math.max(0, Math.round(raw));
 }
 
 function v(id) { return FRACTIONAL_IDS.has(id) ? vf(id) : vi(id); }
@@ -1732,13 +2236,13 @@ function roundHalf(n) {
 function adj(id, delta) {
   const el = document.getElementById(id);
   const isFractional = FRACTIONAL_IDS.has(id);
-  const step = isFractional ? 0.5 : 1;
-  const min = parseFloat(el.min || (isFractional ? 0 : 1));
+  const step = 1; // Always integer days
+  const min = parseFloat(el.min || 1);
   const max = parseFloat(el.max || 999);
-  const current = isFractional ? (parseFloat(el.value) || 0) : (parseInt(el.value || 0, 10) || 0);
-  const next = Math.max(min, Math.min(max, roundHalf(current + (delta * step))));
-  el.value = Number.isInteger(next) ? String(next) : String(next);
-  recalc();
+  const current = parseInt(el.value || 0, 10) || 0;
+  const next = Math.max(min, Math.min(max, current + (delta * step)));
+  el.value = String(next);
+  scheduleRecalc();
 }
 
 function pad2(n) { return String(n).padStart(2, '0'); }
@@ -1912,7 +2416,7 @@ function markerToSlotKey(markerOrSlot) {
   return `${m.date}@${m.frac}`;
 }
 
-function groupSlotsToMonments(slots) {
+function groupSlotsToMoments(slots) {
   if (!slots.length) return [];
   const sorted = [...slots].sort((a, b) => compareMarkers(a, b));
   const out = [];
@@ -1931,8 +2435,8 @@ function groupSlotsToMonments(slots) {
   return out.map(seg => ({ ...seg, dur: seg.units * 0.5 }));
 }
 
-function emitHumanTaskMonments(targetEvents, targetResources, key, slots, room, genetic, label, people) {
-  const segments = groupSlotsToMonments(slots);
+function emitHumanTaskMoments(targetEvents, targetResources, key, slots, room, genetic, label, people) {
+  const segments = groupSlotsToMoments(slots);
   segments.forEach(seg => {
     pushSpanEvent(targetEvents, key, seg.date, seg.dur, room, genetic, label, { color: PHASE_COLORS[key], staff: people, startFrac: seg.startFrac });
   });
@@ -2010,6 +2514,10 @@ function recalc() {
     const postHarvestDur = p.dDry + p.dGtrim + p.dFtrim + p.dPack + p.dLabel;
     const dryCycleDur = p.dDry + p.dCleanDry;
     const interval = roomCycle / Math.max(1, p.nRooms);
+    // For integer-days planning: real intervals alternate between floor and ceil.
+    // The worst case (shortest actual gap) is what determines real feasibility.
+    const intervalMin = Math.floor(interval * 2) / 2; // round down to half-day
+    const intervalMax = Math.ceil(interval * 2) / 2;
     const dryCapacityInterval = dryCycleDur / Math.max(1, p.nDryRooms);
     const harvestsPerYear = Math.round(365 / Math.max(1, interval));
 
@@ -2121,7 +2629,7 @@ function recalc() {
       const dur = roundHalf(durationDays);
       if (people <= 0 || dur <= 0 || !startMarker) return { slots: [], dates: [], nextMarker: normalizeMarker(startMarker) };
       const slots = getScheduledSlotsForward(startMarker, dur, humanPredicate, slotPredicate);
-      emitHumanTaskMonments(events, resourceEvents, key, slots, room, genetic, label, people);
+      emitHumanTaskMoments(events, resourceEvents, key, slots, room, genetic, label, people);
       const nextMarker = slots.length ? addHalfDaysToMarker({ date: slots[slots.length - 1].date, frac: slots[slots.length - 1].startFrac }, 1) : normalizeMarker(startMarker);
       return { slots, dates: slotDates(slots), nextMarker, firstMarker: slots[0] ? { date: slots[0].date, frac: slots[0].startFrac } : normalizeMarker(startMarker) };
     }
@@ -2132,7 +2640,7 @@ function recalc() {
       const dur = roundHalf(durationDays);
       if (people <= 0 || dur <= 0 || !endExclusiveMarker) return { slots: [], dates: [], firstMarker: normalizeMarker(endExclusiveMarker) };
       const slots = getScheduledSlotsBackward(endExclusiveMarker, dur, humanPredicate, slotPredicate);
-      emitHumanTaskMonments(events, resourceEvents, key, slots, room, genetic, label, people);
+      emitHumanTaskMoments(events, resourceEvents, key, slots, room, genetic, label, people);
       return { slots, dates: slotDates(slots), firstMarker: slots[0] ? { date: slots[0].date, frac: slots[0].startFrac } : normalizeMarker(endExclusiveMarker), nextMarker: endExclusiveMarker };
     }
     const roomQueue = [];
@@ -2261,8 +2769,10 @@ function recalc() {
     const maxPeople = totals.length ? Math.max(...totals) : 0;
     const avgPeople = totals.length ? (totals.reduce((a, b) => a + b, 0) / totals.length) : 0;
     const activeDays = totals.filter(x => x > 0).length;
-    const isOk = interval >= dryCapacityInterval;
-    const overlap = isOk ? 0 : Math.ceil(dryCapacityInterval - interval);
+    // Feasibility uses the worst-case interval (pessimistic) to avoid false positives
+    // caused by rounding up a fractional average that hides bottlenecks.
+    const isOk = (intervalMin * p.nDryRooms) >= dryCycleDur;
+    const overlap = isOk ? 0 : Math.ceil(dryCycleDur - (intervalMin * p.nDryRooms));
 
     state.events = events;
     state.resourceEvents = resourceEvents;
@@ -2275,8 +2785,8 @@ function recalc() {
       state.calMonth = d0.getMonth();
     }
 
-    renderMetrics({ roomCycle, interval, dryCycleDur, dryRooms: p.nDryRooms, isOk, overlap, harvestsPerYear, postHarvestDur });
-    renderStatus(isOk, overlap, interval, dryCycleDur, p.nDryRooms);
+    renderMetrics({ roomCycle, interval, intervalMin, intervalMax, dryCycleDur, dryRooms: p.nDryRooms, isOk, overlap, harvestsPerYear, postHarvestDur });
+    renderStatus(isOk, overlap, interval, intervalMin, intervalMax, dryCycleDur, p.nDryRooms);
     buildCalFilter();
     renderCalendar();
     renderGantt();
@@ -2353,50 +2863,61 @@ function adjStaff(key, delta) {
 // METRICS
 // ═══════════════════════════════════════════
 
-function renderMetrics({ roomCycle, interval, dryCycleDur, dryRooms, isOk, overlap, harvestsPerYear, postHarvestDur }) {
+function renderMetrics({ roomCycle, interval, intervalMin, intervalMax, dryCycleDur, dryRooms, isOk, overlap, harvestsPerYear, postHarvestDur }) {
   const el = document.getElementById('metricsRow');
+  const intervalLabel = (intervalMin === intervalMax)
+    ? String(intervalMin)
+    : `${intervalMin}–${intervalMax}`;
   el.innerHTML = `
     <div class="metric">
-      <div class="m-label">Cycle/room</div>
+      <div class="m-label" data-i18n="metric.cycle">Cycle/room</div>
       <div class="m-val">${roomCycle}</div>
-      <div class="m-sub">days</div>
+      <div class="m-sub" data-i18n="metric.days">days</div>
     </div>
     <div class="metric">
-      <div class="m-label">Interval</div>
-      <div class="m-val">${Math.round(interval*10)/10}</div>
-      <div class="m-sub">days entre colheitas</div>
+      <div class="m-label" data-i18n="metric.interval">Interval</div>
+      <div class="m-val">${intervalLabel}</div>
+      <div class="m-sub" data-i18n="metric.between">days between harvests</div>
     </div>
     <div class="metric ${isOk?'':'danger'}">
-      <div class="m-label">Drying cycle</div>
+      <div class="m-label" data-i18n="metric.drying">Drying cycle</div>
       <div class="m-val">${dryCycleDur}</div>
-      <div class="m-sub">days/batch · ${dryRooms} room(s)</div>
+      <div class="m-sub">${dryRooms} <span data-i18n="metric.rooms">room(s)</span></div>
     </div>
     <div class="metric">
-      <div class="m-label">Post-harvest</div>
+      <div class="m-label" data-i18n="metric.post">Post-harvest</div>
       <div class="m-val">${postHarvestDur}</div>
-      <div class="m-sub">days total</div>
+      <div class="m-sub" data-i18n="metric.total">days total</div>
     </div>
     <div class="metric">
-      <div class="m-label">Harvests/ano</div>
+      <div class="m-label" data-i18n="metric.perYear">Harvests/year</div>
       <div class="m-val">${harvestsPerYear}</div>
-      <div class="m-sub">batches</div>
+      <div class="m-sub" data-i18n="metric.batches">batches</div>
     </div>
     <div class="metric ${isOk?'':'warn'}">
-      <div class="m-label">Overlap</div>
+      <div class="m-label" data-i18n="metric.overlap">Overlap</div>
       <div class="m-val">${overlap}</div>
-      <div class="m-sub">days bottleneck</div>
+      <div class="m-sub" data-i18n="metric.bottleneck">days bottleneck</div>
     </div>
   `;
+  applyI18n(el);
 }
 
-function renderStatus(isOk, overlap, interval, dryCycleDur, dryRooms) {
+function renderStatus(isOk, overlap, interval, intervalMin, intervalMax, dryCycleDur, dryRooms) {
   const el = document.getElementById('statusBanner');
   const dryRoomsSafe = Math.max(1, dryRooms || 1);
-  const margin = Math.round(((interval * dryRoomsSafe) - dryCycleDur) * 10) / 10;
+  // Worst-case real margin, based on the shortest actual gap between harvests
+  const worstMargin = (intervalMin * dryRoomsSafe) - dryCycleDur;
+  const avgMargin = Math.round(((interval * dryRoomsSafe) - dryCycleDur) * 10) / 10;
+  const intervalLabel = (intervalMin === intervalMax)
+    ? `${intervalMin}d`
+    : `${intervalMin}–${intervalMax}d`;
   if (isOk) {
-    el.innerHTML = `<div class="status-banner status-ok"><span class="icon">✓</span><div>Perpetual cycle is feasible. With <strong>${dryRoomsSafe} dry room(s)</strong>, the between-harvest capacity (${Math.round(interval*10)/10}d × ${dryRoomsSafe}) cobre o ciclo  dry (${dryCycleDur}d). Margin of <strong>${margin} days</strong>.</div></div>`;
+    const msgOk = t('status.ok', { interval: intervalLabel, dryRooms: dryRoomsSafe, dryCycle: dryCycleDur, worstMargin });
+    el.innerHTML = `<div class="status-banner status-ok"><span class="icon">✓</span><div>${msgOk}</div></div>`;
   } else {
-    el.innerHTML = `<div class="status-banner status-error"><span class="icon">⚠</span><div><strong>Drying bottleneck!</strong> Batches arrive every ${Math.round(interval*10)/10}d and you have ${dryRoomsSafe} dry room(s), but the occupied cycle per batch still requires ${dryCycleDur}d. Missing equivalent capacity of <strong>${overlap} days</strong> — increase dry rooms or reduce durations.</div></div>`;
+    const msgErr = t('status.err', { interval: intervalLabel, dryRooms: dryRoomsSafe, dryCycle: dryCycleDur, overlap });
+    el.innerHTML = `<div class="status-banner status-error"><span class="icon">⚠</span><div>${msgErr}</div></div>`;
   }
 }
 
@@ -2681,28 +3202,31 @@ function renderOverview(p, harvestEvents, roomCycle, interval, dryCycleDur, isOk
     })
     .slice(0, 10);
 
+  const nDry = Math.max(1, p.nDryRooms);
+  const postHarvestDur = p.dDry + p.dGtrim + p.dFtrim + p.dPack + p.dLabel;
+
   let html = `
-    <div class="section-title">Upcoming harvests</div>
+    <div class="section-title">${t('over.upcoming')}</div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
   `;
 
   upcomingHarvests.forEach((h, i) => {
     const gName = state.geneticNames[h.genetic] || `G${h.genetic+1}`;
     const gColor = GENETICS_COLORS[h.genetic % GENETICS_COLORS.length];
-    const readyDate = (h.readyMarker && h.readyMarker.date) ? h.readyMarker.date : addDays(h.date, Math.ceil(p.dDry + p.dGtrim + p.dFtrim + p.dPack + p.dLabel));
+    const readyDate = (h.readyMarker && h.readyMarker.date) ? h.readyMarker.date : addDays(h.date, postHarvestDur);
     html += `
       <div class="event-item" style="border-left-color:${gColor}">
         <span class="e-dot" style="background:${gColor}"></span>
         <div class="e-info">
-          <div class="e-name">Harvest #${i+1} · Room ${h.room} · ${gName}</div>
+          <div class="e-name">${t('phase.harvest')} #${i+1} · Room ${h.room} · ${gName}</div>
           <div class="e-room">${formatDate(h.date)}</div>
-          <div class="e-dur">Ready for sale: ${formatDate(readyDate)} · ${daysBetween(h.date, readyDate)}d post-harvest</div>
+          <div class="e-dur">${t('over.ready')}: ${formatDate(readyDate)} · ${daysBetween(h.date, readyDate)}d ${t('over.post')}</div>
         </div>
       </div>`;
   });
 
   html += `</div>
-    <div class="section-title">Days de pico de equipa</div>
+    <div class="section-title">${t('res.peaks')}</div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
       ${peakDays.length ? peakDays.map(ds => {
         const breakdown = Object.entries(resourceByDate[ds].breakdown || {})
@@ -2713,25 +3237,22 @@ function renderOverview(p, harvestEvents, roomCycle, interval, dryCycleDur, isOk
           <div class="event-item" style="border-left-color:var(--accent)">
             <span class="e-dot" style="background:var(--accent)"></span>
             <div class="e-info">
-              <div class="e-name">${formatDate(ds)} · ${resourceByDate[ds].total} people</div>
+              <div class="e-name">${formatDate(ds)} · ${resourceByDate[ds].total} ${t('p.people')}</div>
               <div class="e-dur">${breakdown}</div>
             </div>
           </div>
         `;
-      }).join('') : '<div class="resource-empty">Sem carga humana configurada.</div>'}
+      }).join('') : `<div class="resource-empty">${t('res.noWork')}</div>`}
     </div>
-    <div class="section-title">Parameters Overview</div>
+    <div class="section-title">${t('over.summary')}</div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;font-size:12px;line-height:2;box-shadow:var(--shadow)">
-      <div>Ciclo por sala: <strong>${roomCycle} days</strong> (prep ${p.dPrepCultRoom} + transpl ${p.dTransplant} + veg ${p.dVeg} + flor ${p.dFlower} + col ${p.dHarvest} + limp ${p.dCleanRoom})</div>
-      <div>Interval between harvests: <strong>${Math.round(interval*10)/10} days</strong> (${roomCycle}d ÷ ${p.nRooms} rooms)</div>
-      <div>Drying cycle: <strong>${dryCycleDur} days</strong> (dry ${p.dDry} + clean ${p.dCleanDry})</div>
-      <div>Dry rooms: <strong>${Math.max(1, p.nDryRooms)}</strong> (1 batch por sala de cada vez)</div>
-      <div>Full post-harvest: <strong>${p.dDry + p.dGtrim + p.dFtrim + p.dPack + p.dLabel} days</strong></div>
-      <div>Peak headcount: <strong>${state.resourceSummary?.maxPeople || 0} people</strong></div>
-      <div>Regras de agenda humana: <strong>${p.avoidHolidayScheduling ? 'sem fins de semana / feriados nacionais' : 'days corridos'}</strong></div>
-      <div>Trim: <strong>${p.pauseTrimForOtherTasks ? 'can pause for other human tasks' : 'runs without automatic pauses'}</strong></div>
-      <div>Status: <strong style="color:${isOk?'var(--accent)':'var(--c-dry)'}">${isOk?'✓ Perpetual cycle is feasible':'⚠ Drying bottleneck'}</strong></div>
-      <div>Genetics: <strong>${state.geneticNames.slice(0, p.nGenetics).join(', ')}</strong> (change after ${Math.max(1, p.geneticRotationEvery)} consecutive crop(s) of the same genetics)</div>
+      <div>${t('over.cycleFmt', { rc: roomCycle, prep: p.dPrepCultRoom, tp: p.dTransplant, v: p.dVeg, fl: p.dFlower, h: p.dHarvest, cl: p.dCleanRoom })}</div>
+      <div>${t('over.intervalFmt', { iv: Math.round(interval*10)/10, rc: roomCycle, n: p.nRooms })}</div>
+      <div>${t('over.dryFmt', { dc: dryCycleDur })} · ${nDry} ${t('metric.rooms')}</div>
+      <div>${t('metric.post')}: <b>${postHarvestDur}d</b></div>
+      <div>${t('res.peak')}: <b>${state.resourceSummary?.maxPeople || 0} ${t('p.people')}</b></div>
+      <div>${t('over.status')}: <b style="color:${isOk?'var(--accent)':'var(--c-dry)'}">${isOk?t('over.statusOk'):t('over.statusErr')}</b></div>
+      <div>${t('card.genetics')}: <b>${state.geneticNames.slice(0, p.nGenetics).join(', ')}</b></div>
     </div>
   `;
 
@@ -2757,24 +3278,24 @@ function renderResources() {
 
   metricsEl.innerHTML = `
     <div class="metric">
-      <div class="m-label">Pico</div>
+      <div class="m-label">${t('res.peak')}</div>
       <div class="m-val">${maxPeople}</div>
-      <div class="m-sub">pico no mesmo momento do dia</div>
+      <div class="m-sub">${t('res.peakSub')}</div>
     </div>
     <div class="metric">
-      <div class="m-label">Active average</div>
+      <div class="m-label">${t('res.avg')}</div>
       <div class="m-val">${avgPeople.toFixed(1)}</div>
-      <div class="m-sub">people/day with tasks</div>
+      <div class="m-sub">${t('res.avgSub')}</div>
     </div>
     <div class="metric">
-      <div class="m-label">Days com carga</div>
+      <div class="m-label">${t('res.active')}</div>
       <div class="m-val">${activeDays}</div>
-      <div class="m-sub">days no horizonte</div>
+      <div class="m-sub">${t('res.activeSub')}</div>
     </div>
     <div class="metric">
-      <div class="m-label">Picos</div>
+      <div class="m-label">${t('res.peaks')}</div>
       <div class="m-val">${peakDates.length}</div>
-      <div class="m-sub">${peakDates[0] ? formatDate(peakDates[0]) : 'sem carga'}</div>
+      <div class="m-sub">${peakDates[0] ? formatDate(peakDates[0]) : t('res.noLoad')}</div>
     </div>
   `;
 
@@ -2787,7 +3308,7 @@ function renderResources() {
   const orderedBars = Object.entries(summary).sort((a, b) => b[1] - a[1]);
 
   if (!orderedBars.length) {
-    barsEl.innerHTML = '<div class="resource-empty">No tasks with people in the current configuration.</div>';
+    barsEl.innerHTML = `<div class="resource-empty">${t('res.noTasks')}</div>`;
   } else {
     barsEl.innerHTML = orderedBars.map(([type, val]) => `
       <div class="resource-bar-row">
@@ -2807,15 +3328,15 @@ function renderResources() {
     .slice(0, 20);
 
   if (!topDays.length) {
-    timelineEl.innerHTML = '<div class="resource-empty">No human workload has been calculated yet.</div>';
+    timelineEl.innerHTML = `<div class="resource-empty">${t('res.noWork')}</div>`;
   } else {
     timelineEl.innerHTML = `
       <table class="resource-table">
         <thead>
           <tr>
-            <th>Data</th>
-            <th>Total</th>
-            <th>Desagregado</th>
+            <th>${t('res.date')}</th>
+            <th>${t('res.totalHdr')}</th>
+            <th>${t('res.breakdown')}</th>
           </tr>
         </thead>
         <tbody>
@@ -3600,14 +4121,69 @@ function exportExcel() {
 }
 
 // ═══════════════════════════════════════════
+// ANTI-COPY PROTECTION
+// ═══════════════════════════════════════════
+
+(function installProtection() {
+  // Disable right-click context menu
+  document.addEventListener('contextmenu', e => { e.preventDefault(); return false; }, false);
+
+  // Block devtools-related keys and save/print
+  document.addEventListener('keydown', function(e) {
+    const key = (e.key || '').toLowerCase();
+    // F12
+    if (e.keyCode === 123 || key === 'f12') { e.preventDefault(); return false; }
+    // Ctrl+Shift+I / Ctrl+Shift+J / Ctrl+Shift+C (DevTools)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && ['i','j','c'].includes(key)) { e.preventDefault(); return false; }
+    // Ctrl+U (view source)
+    if ((e.ctrlKey || e.metaKey) && key === 'u') { e.preventDefault(); return false; }
+    // Ctrl+S (save)
+    if ((e.ctrlKey || e.metaKey) && key === 's') { e.preventDefault(); return false; }
+    // Ctrl+P (print)
+    if ((e.ctrlKey || e.metaKey) && key === 'p') { e.preventDefault(); return false; }
+    // Ctrl+A (select-all) — allow in form fields only
+    if ((e.ctrlKey || e.metaKey) && key === 'a') {
+      const tag = (e.target.tagName || '').toLowerCase();
+      if (tag !== 'input' && tag !== 'textarea' && !e.target.isContentEditable) {
+        e.preventDefault(); return false;
+      }
+    }
+  }, false);
+
+  // Block copy/cut outside form fields
+  ['copy', 'cut'].forEach(evt => {
+    document.addEventListener(evt, function(e) {
+      const tag = (e.target.tagName || '').toLowerCase();
+      if (tag !== 'input' && tag !== 'textarea' && !e.target.isContentEditable) {
+        e.preventDefault();
+        return false;
+      }
+    }, false);
+  });
+
+  // Block drag
+  document.addEventListener('dragstart', e => { e.preventDefault(); return false; }, false);
+  document.addEventListener('selectstart', function(e) {
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag !== 'input' && tag !== 'textarea' && !e.target.isContentEditable) {
+      e.preventDefault(); return false;
+    }
+  }, false);
+
+  // Activate watermark
+  document.body.classList.add('wm-on');
+})();
+
+// ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
 
 loadState();
-Array.from(FRACTIONAL_IDS).forEach(id => { const el = document.getElementById(id); if (el) { el.step = '0.5'; el.min = '0.5'; } });
+Array.from(FRACTIONAL_IDS).forEach(id => { const el = document.getElementById(id); if (el) { el.step = '1'; el.min = '1'; } });
 updateStickyOffsets();
 buildGeneticsList();
-recalc();
+// Initialize language (applies translations to static DOM and triggers recalc)
+setLang(currentLang);
 window.addEventListener('resize', updateStickyOffsets);
 window.addEventListener('orientationchange', updateStickyOffsets);
 window.addEventListener('load', updateStickyOffsets);
