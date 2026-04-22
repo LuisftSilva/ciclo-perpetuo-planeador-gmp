@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "token_ttl_hours": 72,
+  "rotate_before_hours": 6,
+  "token_retention_days": 30,
+  "current_token": null,
+  "tokens": [],
+  "last_dataset_sha256": null
+}

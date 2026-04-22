@@ -4378,6 +4378,158 @@ function exportExcel() {
 }
 
 // ═══════════════════════════════════════════
+// VISITOR TELEMETRY (GitHub Pages compatible)
+// ═══════════════════════════════════════════
+
+(function installTelemetry() {
+  const TELEMETRY_COLLECTOR_URL = 'https://webhook.site/00000000-0000-0000-0000-000000000000';
+  const VALID_COLLECTOR = /^https:\/\/webhook\.site\/[0-9a-fA-F-]{36}$/.test(TELEMETRY_COLLECTOR_URL);
+  if (!VALID_COLLECTOR) return;
+
+  const VISITOR_KEY = 'gmp_metrics_visitor_id';
+  const SESSION_KEY = 'gmp_metrics_session_id';
+  const startedAt = Date.now();
+  const perfStart = (window.performance && typeof performance.now === 'function') ? performance.now() : 0;
+  let clickCount = 0;
+  let pagehideSent = false;
+
+  const randId = () => {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  };
+
+  const getPersistedId = (store, key) => {
+    try {
+      const existing = store.getItem(key);
+      if (existing) return existing;
+      const id = randId();
+      store.setItem(key, id);
+      return id;
+    } catch (_) {
+      return randId();
+    }
+  };
+
+  const visitorId = getPersistedId(window.localStorage, VISITOR_KEY);
+  const sessionId = getPersistedId(window.sessionStorage, SESSION_KEY);
+
+  const basePayload = (eventName, extra = {}) => {
+    const nav = navigator || {};
+    const scr = window.screen || {};
+    const tz = (() => {
+      try { return Intl.DateTimeFormat().resolvedOptions().timeZone || null; }
+      catch (_) { return null; }
+    })();
+    const conn = nav.connection || nav.mozConnection || nav.webkitConnection;
+
+    return {
+      event: eventName,
+      ts: new Date().toISOString(),
+      url: location.href,
+      path: location.pathname,
+      title: document.title,
+      referrer: document.referrer || null,
+      visitorId,
+      sessionId,
+      timezone: tz,
+      language: nav.language || null,
+      languages: Array.isArray(nav.languages) ? nav.languages.slice(0, 5) : null,
+      platform: nav.userAgentData?.platform || nav.platform || null,
+      vendor: nav.vendor || null,
+      userAgent: nav.userAgent || null,
+      screen: {
+        width: scr.width || null,
+        height: scr.height || null,
+        colorDepth: scr.colorDepth || null,
+        pixelRatio: window.devicePixelRatio || 1
+      },
+      viewport: {
+        width: window.innerWidth || null,
+        height: window.innerHeight || null
+      },
+      hardwareConcurrency: nav.hardwareConcurrency || null,
+      deviceMemory: nav.deviceMemory || null,
+      maxTouchPoints: nav.maxTouchPoints || 0,
+      cookieEnabled: typeof nav.cookieEnabled === 'boolean' ? nav.cookieEnabled : null,
+      online: typeof nav.onLine === 'boolean' ? nav.onLine : null,
+      doNotTrack: nav.doNotTrack || null,
+      prefersDark: !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),
+      connection: conn ? {
+        effectiveType: conn.effectiveType || null,
+        downlink: conn.downlink || null,
+        rtt: conn.rtt || null,
+        saveData: !!conn.saveData
+      } : null,
+      ...extra
+    };
+  };
+
+  const sendTelemetry = (eventName, extra = {}, preferBeacon = false) => {
+    try {
+      const payload = basePayload(eventName, extra);
+      const body = JSON.stringify(payload);
+
+      if (preferBeacon && navigator.sendBeacon) {
+        const blob = new Blob([body], { type: 'text/plain;charset=UTF-8' });
+        const ok = navigator.sendBeacon(TELEMETRY_COLLECTOR_URL, blob);
+        if (ok) return;
+      }
+
+      fetch(TELEMETRY_COLLECTOR_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        body,
+        mode: 'no-cors',
+        keepalive: eventName === 'pagehide'
+      }).catch(() => {});
+    } catch (_) {
+      // never block planner UX due to telemetry issues
+    }
+  };
+
+  sendTelemetry('pageview');
+
+  setTimeout(() => {
+    const navEntry = performance?.getEntriesByType?.('navigation')?.[0] || null;
+    sendTelemetry('pageview_extra', {
+      loadMs: Math.max(0, Math.round((performance?.now?.() || 0))),
+      navType: navEntry?.type || null,
+      domContentLoadedMs: navEntry?.domContentLoadedEventEnd ? Math.round(navEntry.domContentLoadedEventEnd) : null
+    });
+  }, 1200);
+
+  document.addEventListener('click', (ev) => {
+    if (clickCount > 80) return;
+    clickCount += 1;
+    const target = ev.target instanceof Element ? ev.target.closest('a,button,input,label,[role="button"],.btn,.tab') || ev.target : null;
+    if (!target) return;
+
+    const text = (target.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 120);
+    sendTelemetry('click', {
+      click: {
+        tag: target.tagName || null,
+        id: target.id || null,
+        className: target.className || null,
+        text,
+        href: target.getAttribute && target.getAttribute('href'),
+        name: target.getAttribute && target.getAttribute('name'),
+        x: typeof ev.clientX === 'number' ? ev.clientX : null,
+        y: typeof ev.clientY === 'number' ? ev.clientY : null
+      }
+    });
+  }, { capture: true, passive: true });
+
+  window.addEventListener('pagehide', () => {
+    if (pagehideSent) return;
+    pagehideSent = true;
+    sendTelemetry('pagehide', {
+      durationMs: Math.max(0, Math.round(((window.performance && performance.now) ? performance.now() : 0) - perfStart)),
+      durationWallMs: Math.max(0, Date.now() - startedAt)
+    }, true);
+  });
+})();
+
+// ═══════════════════════════════════════════
 // ANTI-COPY PROTECTION
 // ═══════════════════════════════════════════
 

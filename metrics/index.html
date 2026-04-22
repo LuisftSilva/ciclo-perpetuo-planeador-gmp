@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visitor Metrics Dashboard</title>
+  <style>
+    :root {
+      --bg: #101317;
+      --card: #161b22;
+      --muted: #8b949e;
+      --text: #e6edf3;
+      --accent: #2f81f7;
+      --border: #30363d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 20px;
+    }
+    h1, h2 { margin: 0 0 12px; }
+    .muted { color: var(--muted); }
+    .gate, .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .gate input {
+      width: min(420px, 100%);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #0d1117;
+      color: var(--text);
+      padding: 10px;
+      margin-right: 8px;
+    }
+    button {
+      border: none;
+      background: var(--accent);
+      color: white;
+      border-radius: 8px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .stat {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .stat .label { color: var(--muted); font-size: 12px; }
+    .stat .value { font-size: 24px; font-weight: 700; margin-top: 4px; }
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 920px) {
+      .split { grid-template-columns: 1fr; }
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+      padding: 8px;
+      word-break: break-word;
+    }
+    th { color: var(--muted); font-weight: 600; }
+    .chip {
+      display: inline-block;
+      background: #1f2937;
+      border: 1px solid #374151;
+      border-radius: 999px;
+      padding: 3px 8px;
+      margin: 2px;
+      font-size: 12px;
+    }
+    .hidden { display: none; }
+    .error { color: #ff7b72; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <section class="gate" id="gate">
+    <h1>Visitor Metrics Dashboard</h1>
+    <p class="muted">Encrypted at rest in this repository. Enter the dashboard password to decrypt locally in your browser.</p>
+    <input id="password" type="password" placeholder="Dashboard password" autocomplete="current-password" />
+    <button id="unlock">Unlock</button>
+    <p id="status" class="muted"></p>
+    <p id="error" class="error"></p>
+  </section>
+
+  <section id="dashboard" class="hidden">
+    <div class="panel">
+      <h2>Overview</h2>
+      <div id="stats" class="grid"></div>
+    </div>
+
+    <div class="split">
+      <div class="panel">
+        <h2>Top Devices / Platforms</h2>
+        <div id="devices"></div>
+        <hr style="border:0;border-top:1px solid var(--border);margin:10px 0;" />
+        <div id="platforms"></div>
+      </div>
+      <div class="panel">
+        <h2>Languages / Timezones</h2>
+        <div id="languages"></div>
+        <hr style="border:0;border-top:1px solid var(--border);margin:10px 0;" />
+        <div id="timezones"></div>
+      </div>
+    </div>
+
+    <div class="split">
+      <div class="panel">
+        <h2>Recent Visits</h2>
+        <table id="recentVisits"></table>
+      </div>
+      <div class="panel">
+        <h2>Recent Clicks</h2>
+        <table id="recentClicks"></table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Raw Events</h2>
+      <table id="rawEvents"></table>
+    </div>
+  </section>
+
+  <script>
+    const DATA_URL = './data/metrics.enc.json';
+
+    const b64ToBytes = (base64) => Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    const textEncoder = new TextEncoder();
+    const textDecoder = new TextDecoder();
+
+    async function decryptPayload(pkg, password) {
+      if (!pkg || !pkg.ciphertext || !pkg.salt || !pkg.iv || !pkg.iterations) {
+        throw new Error('Encrypted payload missing or not generated yet.');
+      }
+
+      const keyMaterial = await crypto.subtle.importKey(
+        'raw',
+        textEncoder.encode(password),
+        { name: 'PBKDF2' },
+        false,
+        ['deriveKey']
+      );
+
+      const key = await crypto.subtle.deriveKey(
+        {
+          name: 'PBKDF2',
+          hash: 'SHA-256',
+          salt: b64ToBytes(pkg.salt),
+          iterations: Number(pkg.iterations)
+        },
+        keyMaterial,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['decrypt']
+      );
+
+      const decrypted = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: b64ToBytes(pkg.iv) },
+        key,
+        b64ToBytes(pkg.ciphertext)
+      );
+
+      return JSON.parse(textDecoder.decode(decrypted));
+    }
+
+    const countBy = (items, fn) => {
+      const map = new Map();
+      for (const item of items) {
+        const key = fn(item);
+        if (!key) continue;
+        map.set(key, (map.get(key) || 0) + 1);
+      }
+      return [...map.entries()].sort((a, b) => b[1] - a[1]);
+    };
+
+    function uniqCount(items, key) {
+      return new Set(items.map(x => x[key]).filter(Boolean)).size;
+    }
+
+    function setStats(events) {
+      const stats = [
+        ['Total events', events.length],
+        ['Unique visitors', uniqCount(events, 'visitorId')],
+        ['Unique sessions', uniqCount(events, 'sessionId')],
+        ['Unique IPs', uniqCount(events, 'requestIp')]
+      ];
+      document.getElementById('stats').innerHTML = stats.map(([label, value]) => `
+        <div class="stat">
+          <div class="label">${label}</div>
+          <div class="value">${value}</div>
+        </div>
+      `).join('');
+    }
+
+    function chips(containerId, title, entries, limit = 12) {
+      const root = document.getElementById(containerId);
+      const top = entries.slice(0, limit);
+      root.innerHTML = `<p class="muted">${title}</p>` +
+        (top.length ? top.map(([key, value]) => `<span class="chip">${key}: ${value}</span>`).join('') : '<p class="muted">No data</p>');
+    }
+
+    function table(elId, headers, rows) {
+      const el = document.getElementById(elId);
+      const thead = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+      const body = rows.length
+        ? rows.map(row => `<tr>${row.map(col => `<td>${col ?? ''}</td>`).join('')}</tr>`).join('')
+        : `<tr><td colspan="${headers.length}" class="muted">No data</td></tr>`;
+      el.innerHTML = `<thead>${thead}</thead><tbody>${body}</tbody>`;
+    }
+
+    function renderDashboard(dataset) {
+      const events = Array.isArray(dataset.events) ? dataset.events : [];
+      setStats(events);
+
+      chips('devices', 'Devices', countBy(events, e => e.device || 'unknown'));
+      chips('platforms', 'Platforms', countBy(events, e => e.platform || 'unknown'));
+      chips('languages', 'Languages', countBy(events, e => e.language || 'unknown'));
+      chips('timezones', 'Timezones', countBy(events, e => e.timezone || 'unknown'));
+
+      const recentVisits = events
+        .filter(e => ['pageview', 'pageview_extra'].includes(String(e.event)))
+        .slice(0, 25)
+        .map(e => [e.receivedAt, e.url || '-', e.requestIp || '-', e.visitorId || '-']);
+      table('recentVisits', ['When', 'URL', 'IP', 'Visitor'], recentVisits);
+
+      const recentClicks = events
+        .filter(e => String(e.event) === 'click')
+        .slice(0, 25)
+        .map(e => [
+          e.receivedAt,
+          e.click?.tag || '-',
+          e.click?.text || '-',
+          e.click?.href || '-',
+          e.requestIp || '-'
+        ]);
+      table('recentClicks', ['When', 'Tag', 'Text', 'Href', 'IP'], recentClicks);
+
+      const rawRows = events.slice(0, 300).map(e => [
+        e.receivedAt,
+        e.event,
+        e.requestIp || '-',
+        e.visitorId || '-',
+        e.sessionId || '-',
+        e.url || '-'
+      ]);
+      table('rawEvents', ['When', 'Event', 'IP', 'Visitor', 'Session', 'URL'], rawRows);
+    }
+
+    async function unlock() {
+      const password = document.getElementById('password').value;
+      const status = document.getElementById('status');
+      const error = document.getElementById('error');
+      const button = document.getElementById('unlock');
+
+      error.textContent = '';
+      status.textContent = 'Loading encrypted dataset…';
+      button.disabled = true;
+
+      try {
+        const response = await fetch(DATA_URL, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`Unable to load ${DATA_URL} (${response.status})`);
+        const encryptedPackage = await response.json();
+
+        status.textContent = 'Decrypting in browser…';
+        const dataset = await decryptPayload(encryptedPackage, password);
+        renderDashboard(dataset);
+
+        document.getElementById('gate').classList.add('hidden');
+        document.getElementById('dashboard').classList.remove('hidden');
+      } catch (err) {
+        error.textContent = 'Unlock failed: ' + (err.message || String(err));
+        status.textContent = '';
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    document.getElementById('unlock').addEventListener('click', unlock);
+    document.getElementById('password').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') unlock();
+    });
+  </script>
+</body>
+</html>
