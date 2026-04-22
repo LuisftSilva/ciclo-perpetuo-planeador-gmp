@@ -1,0 +1,3618 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Ciclo Perpétuo — Planeador GMP</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f2eb;
+  --bg2: #ede9df;
+  --surface: #ffffff;
+  --border: #d8d2c4;
+  --text: #1a1a14;
+  --muted: #8a8270;
+  --accent: #2d5a27;
+  --accent2: #7ab648;
+
+  /* phase colors */
+  --c-veg:      #4a9e5c;
+  --c-flower:   #8ab83a;
+  --c-ipm:      #c8dc6e;
+  --c-harvest:  #e8a030;
+  --c-dry:      #d4704a;
+  --c-cure:     #b85c8a;
+  --c-gtrim:    #8870c8;
+  --c-ftrim:    #6090d8;
+  --c-pack:     #3a9ec8;
+  --c-label:    #2a7a9a;
+  --c-cleanf:   #a09060;
+  --c-cleand:   #c08050;
+  --c-mother:   #58a882;
+  --c-clone:    #3d8868;
+  --c-holiday:  #e05050;
+  --c-maint:    #707878;
+
+  --radius: 12px;
+  --shadow: 0 2px 16px rgba(0,0,0,0.08);
+  --tabs-top: 57px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+input, select, button { min-width: 0; }
+input[type=number] { -moz-appearance: textfield; }
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--accent);
+  color: white;
+  padding: 18px 20px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 100vw;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+}
+
+.header-left h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  line-height: 1;
+}
+
+.header-left span {
+  font-size: 10px;
+  opacity: 0.65;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 3px;
+  display: block;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+.btn {
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 7px 12px;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.btn-ghost {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.btn-ghost:hover { background: rgba(255,255,255,0.25); }
+
+.btn-primary {
+  background: var(--accent2);
+  color: white;
+}
+
+.btn-primary:hover { filter: brightness(1.1); }
+
+/* ── TAB NAV ── */
+.tab-nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  position: sticky;
+  top: var(--tabs-top, 57px);
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 100vw;
+  z-index: 90;
+}
+
+.tab-nav::-webkit-scrollbar { display: none; }
+
+.tab {
+  padding: 12px 18px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.15s;
+  text-transform: uppercase;
+}
+
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ── CONTENT ── */
+.content { padding: 16px; width: 100%; max-width: 1400px; margin: 0 auto; }
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ── PARAMS PANEL ── */
+.section-title {
+  font-family: 'Fraunces', serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
+  margin-top: 4px;
+}
+
+.params-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.param-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.param-card h3 {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.param-card h3 .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+
+.param-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(82px, var(--control-w));
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 8px;
+  min-width: 0;
+}
+
+.param-row label {
+  font-size: 12px;
+  color: var(--text);
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.param-row label small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.param-row > .num-input,
+.param-row > .date-input {
+  justify-self: end;
+}
+
+.num-input {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg);
+  flex: none;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+}
+
+.num-input button {
+  flex: 0 0 var(--control-btn);
+  width: var(--control-btn); height: var(--control-btn);
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s;
+}
+
+.num-input button:hover { background: var(--border); }
+
+.num-input input {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  text-align: center;
+  font-family: 'DM Mono', monospace;
+  font-size: var(--control-font);
+  font-weight: 500;
+  color: var(--accent);
+  outline: none;
+}
+
+.num-input .unit {
+  font-size: 10px;
+  color: var(--muted);
+  padding-right: 8px;
+}
+
+/* start date */
+.date-input {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+}
+.date-input::-webkit-calendar-picker-indicator {
+  margin-left: 4px;
+}
+
+.date-input:focus { border-color: var(--accent); }
+
+/* genetics table */
+.genetics-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.genetic-row {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  min-width: 0;
+}
+
+.genetic-dot {
+  width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0;
+}
+
+.genetic-row input[type=text] {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+  min-width: 0;
+}
+
+.genetic-row .cycles-badge {
+  font-size: 10px;
+  color: var(--muted);
+  white-space: normal;
+  text-align: right;
+  min-width: 0;
+  max-width: 42vw;
+}
+
+/* ── METRICS ── */
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.metric {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  box-shadow: var(--shadow);
+}
+
+.metric .m-label {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+
+.metric .m-val {
+  font-family: 'Fraunces', serif;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.metric .m-sub {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.metric.warn .m-val { color: var(--c-harvest); }
+.metric.danger .m-val { color: var(--c-dry); }
+
+/* ── STATUS BANNER ── */
+.status-banner {
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  line-height: 1.5;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.status-banner .icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+.status-ok { background: #e8f5e0; border: 1px solid #aed88a; color: #2a5a1a; }
+.status-warn { background: #fef3e0; border: 1px solid #f0c060; color: #7a4800; }
+.status-error { background: #fde8e0; border: 1px solid #e09070; color: #7a2a10; }
+
+/* ── CALENDAR ── */
+.cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 8px;
+}
+
+.cal-nav h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 600;
+  flex: 1;
+  text-align: center;
+}
+
+.cal-nav button {
+  width: 36px; height: 36px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.cal-nav button:hover { background: var(--bg2); }
+
+.cal-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.filter-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.filter-chip .chip-dot {
+  width: 8px; height: 8px; border-radius: 2px;
+}
+
+.filter-chip.active {
+  border-color: currentColor;
+  background: rgba(0,0,0,0.04);
+}
+
+/* Month calendar grid */
+.cal-month {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+
+.cal-weekday {
+  text-align: center;
+  padding: 8px 4px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.cal-weekday.weekend { color: var(--c-holiday); }
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.cal-day {
+  min-height: 80px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 5px;
+  position: relative;
+  transition: background 0.1s;
+  cursor: pointer;
+}
+
+.cal-day:nth-child(7n) { border-right: none; }
+.cal-day:hover { background: var(--bg); }
+
+.cal-day.other-month { background: var(--bg2); }
+.cal-day.other-month .day-num { opacity: 0.35; }
+
+.cal-day.today .day-num {
+  background: var(--accent);
+  color: white;
+  border-radius: 50%;
+  width: 22px; height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cal-day.is-holiday { background: #fff5f5; }
+.cal-day.weekend-day { background: var(--bg2); opacity: 0.7; }
+
+.day-num {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 3px;
+  width: 22px; height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.day-events {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.day-event {
+  border-radius: 3px;
+  padding: 2px 4px;
+  font-size: 9px;
+  font-weight: 500;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.more-events {
+  font-size: 9px;
+  color: var(--muted);
+  padding: 1px 2px;
+}
+
+/* ── GANTT ── */
+.gantt-wrap {
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.gantt-inner { min-width: 700px; }
+
+.gantt-header {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.gantt-label-col { width: 130px; flex-shrink: 0; padding: 10px 12px; font-size: 10px; color: var(--muted); font-weight: 500; border-right: 1px solid var(--border); }
+.gantt-timeline { flex: 1; display: flex; overflow: hidden; }
+
+.gantt-row-wrap {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  min-height: 36px;
+}
+
+.gantt-row-wrap:last-child { border-bottom: none; }
+.gantt-row-wrap.sep { background: var(--bg2); min-height: 0; height: 1px; }
+
+.gantt-row-label {
+  width: 130px;
+  flex-shrink: 0;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  border-right: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  word-break: break-word;
+  line-height: 1.3;
+  position: sticky;
+  left: 0;
+  z-index: 12;
+  background: var(--surface);
+  box-shadow: 1px 0 0 var(--border);
+}
+
+.gantt-row-track {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent calc(var(--day-w) * 7 - 1px),
+    var(--border) calc(var(--day-w) * 7 - 1px),
+    var(--border) calc(var(--day-w) * 7)
+  );
+}
+
+.g-seg {
+  position: absolute;
+  top: 4px;
+  height: calc(100% - 8px);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.9);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: default;
+  transition: filter 0.15s;
+  z-index: 2;
+}
+
+.g-seg:hover { filter: brightness(1.1); z-index: 5; }
+
+.g-seg.holiday-seg {
+  top: 0; height: 100%;
+  border-radius: 0;
+  opacity: 0.25;
+  z-index: 3;
+}
+
+.g-seg.sat-seg,
+.g-seg.sun-seg {
+  top: 0;
+  height: 100%;
+  border-radius: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.g-seg.sat-seg { background: rgba(0,0,0,0.05); }
+.g-seg.sun-seg { background: rgba(0,0,0,0.10); }
+
+/* day headers */
+.gantt-days-header {
+  display: flex;
+  height: 28px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+
+.gantt-day-lbl {
+  flex-shrink: 0;
+  font-size: 8px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid rgba(0,0,0,0.05);
+  overflow: hidden;
+}
+
+.gantt-day-lbl.holiday-lbl { color: var(--c-holiday); font-weight: 500; }
+.gantt-day-lbl.weekend-lbl { opacity: 1; }
+.gantt-day-lbl.sat-lbl { background: rgba(0,0,0,0.05); color: #7d776a; }
+.gantt-day-lbl.sun-lbl { background: rgba(0,0,0,0.10); color: #6f685a; }
+.gantt-day-lbl.month-start { border-left: 2px solid var(--accent); color: var(--accent); font-weight: 500; }
+
+/* today line */
+.today-line {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: var(--accent);
+  opacity: 0.5;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* ── TOOLTIP ── */
+.tooltip {
+  position: fixed;
+  background: rgba(20,24,20,0.95);
+  color: white;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 11px;
+  line-height: 1.6;
+  max-width: 240px;
+  pointer-events: none;
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  display: none;
+}
+
+.tooltip strong { color: var(--accent2); }
+
+/* ── LEGEND ── */
+.legend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--text);
+}
+
+.legend-dot {
+  width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0;
+}
+
+/* ── MODAL / DRAWER ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 200;
+  display: none;
+  align-items: flex-end;
+}
+
+.overlay.open { display: flex; }
+
+.drawer {
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  padding: 20px;
+  width: 100%;
+  max-height: 70vh;
+  overflow-y: auto;
+  animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.drawer h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.drawer-close {
+  float: right;
+  background: var(--bg2);
+  border: none;
+  border-radius: 50%;
+  width: 28px; height: 28px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -4px;
+}
+
+.event-list { display: flex; flex-direction: column; gap: 8px; }
+
+.event-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: 10px;
+  border-left: 3px solid var(--border);
+}
+
+.event-item .e-dot {
+  width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; margin-top: 2px;
+}
+
+.event-item .e-info { flex: 1; }
+.event-item .e-name { font-weight: 500; font-size: 12px; }
+.event-item .e-room { font-size: 10px; color: var(--muted); }
+.event-item .e-dur { font-size: 10px; color: var(--muted); margin-top: 1px; }
+
+/* ── EXCEL EXPORT ── */
+.export-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.export-section p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+
+/* ── RESOURCES ── */
+.resource-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.resource-card,
+.resource-table-wrap,
+.resource-chart-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.resource-config-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.resource-config-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(82px, var(--control-w));
+  gap: 8px;
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-width: 0;
+}
+
+.resource-config-row label {
+  font-size: 11px;
+  line-height: 1.35;
+  min-width: 0;
+}
+
+.resource-config-row > .num-input {
+  justify-self: end;
+}
+
+.resource-config-row label small {
+  display: block;
+  color: var(--muted);
+  font-size: 9px;
+  margin-top: 2px;
+}
+
+.inline-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.inline-check input { accent-color: var(--accent); }
+
+
+.resource-note {
+  margin-top: 10px;
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.resource-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.resource-bar-row {
+  display: grid;
+  grid-template-columns: 110px minmax(0,1fr) 52px;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+}
+
+.resource-bar-track {
+  height: 18px;
+  background: var(--bg2);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.resource-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+}
+
+.resource-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.resource-table th,
+.resource-table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.resource-table th {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  background: var(--bg2);
+}
+
+.resource-table tr:last-child td { border-bottom: none; }
+
+.resource-breakdown {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.resource-empty {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 8px 0;
+}
+
+.resource-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.resource-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  font-size: 10px;
+}
+
+.resource-pill-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+}
+
+@media (max-width: 980px) {
+  .resource-grid { grid-template-columns: 1fr; }
+}
+
+/* mobile adjustments */
+@media (max-width: 600px) {
+  :root {
+    --control-w: 98px;
+    --control-btn: 22px;
+    --control-input: 28px;
+    --control-font: 11px;
+  }
+  .content { padding: 10px; }
+  .params-grid { grid-template-columns: 1fr; }
+  .metrics-row { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .metric .m-val { font-size: 20px; }
+  .param-card { padding: 14px; }
+  .param-row { gap: 6px; grid-template-columns: minmax(0, 1fr) 98px; }
+  .param-row label { font-size: 11px; }
+  .param-row label small { font-size: 9px; }
+  .num-input .unit { font-size: 9px; padding-right: 6px; }
+  .date-input { font-size: 11px; padding: 5px 8px; }
+  .resource-config-row { grid-template-columns: minmax(0, 1fr) 98px; }
+  .genetic-row { grid-template-columns: 10px minmax(0, 1fr) minmax(80px, 34vw); }
+  .cal-day { min-height: 60px; padding: 3px; }
+  .day-event { font-size: 8px; padding: 1px 3px; }
+  .gantt-row-label { width: 90px; font-size: 10px; padding: 6px 8px; left: 0; z-index: 12; background: var(--surface); }
+}
+
+@media (max-width: 430px) {
+  :root {
+    --control-w: 88px;
+    --control-btn: 20px;
+    --control-input: 24px;
+    --control-font: 10px;
+  }
+  .header { padding: 16px 14px 14px; }
+  .header-left h1 { font-size: 18px; }
+  .header-left span { font-size: 9px; }
+  .header-actions { gap: 6px; }
+  .btn { padding: 6px 10px; font-size: 10px; }
+  .tab { padding: 11px 14px; font-size: 10px; }
+  .param-card { padding: 12px; }
+  .param-card h3 { font-size: 8px; }
+  .param-row { grid-template-columns: minmax(0, 1fr) 88px; gap: 5px; }
+  .param-row label { font-size: 10.5px; }
+  .param-row label small { font-size: 8.5px; }
+  .date-input { font-size: 10px; padding: 4px 6px; }
+  .resource-config-row { grid-template-columns: minmax(0, 1fr) 88px; gap: 5px; padding: 8px; }
+  .resource-config-row label { font-size: 10px; }
+  .resource-config-row label small { font-size: 8px; }
+  .genetic-row { grid-template-columns: 10px minmax(0, 1fr) minmax(72px, 32vw); gap: 6px; padding: 6px 8px; }
+  .genetic-row input[type=text] { font-size: 11px; }
+  .genetic-row .cycles-badge { font-size: 8px; max-width: 32vw; }
+}
+
+@media (max-width: 370px) {
+  :root {
+    --control-w: 78px;
+    --control-btn: 18px;
+    --control-input: 20px;
+    --control-font: 9.5px;
+  }
+  .content { padding: 8px; }
+  .param-card { padding: 10px; }
+  .param-row { grid-template-columns: minmax(0, 1fr) 78px; gap: 4px; }
+  .param-row label { font-size: 10px; }
+  .param-row label small { font-size: 8px; }
+  .num-input .unit { font-size: 7px; padding-right: 3px; }
+  .date-input { font-size: 9px; padding: 4px 5px; }
+  .resource-config-row { grid-template-columns: minmax(0, 1fr) 78px; gap: 4px; padding: 7px; }
+  .resource-config-row label { font-size: 9px; }
+  .resource-config-row label small { font-size: 7px; }
+  .genetic-row { grid-template-columns: 10px minmax(0, 1fr) minmax(64px, 30vw); gap: 5px; padding: 5px 7px; }
+  .genetic-row input[type=text] { font-size: 10px; }
+  .genetic-row .cycles-badge { font-size: 7px; max-width: 30vw; }
+}
+</style>
+</head>
+<body>
+
+<div class="tooltip" id="tooltip"></div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>Ciclo Perpétuo</h1>
+    <span>Planeador GMP · Portugal</span>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost" onclick="exportExcel()">⬇ Excel</button>
+    <button class="btn btn-primary" onclick="scheduleRecalc()">↺ Atualizar</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-nav">
+  <div class="tab active" onclick="switchTab('params')">⚙ Parâmetros</div>
+  <div class="tab" onclick="switchTab('calendar')">📅 Calendário</div>
+  <div class="tab" onclick="switchTab('gantt')">📊 Gantt</div>
+  <div class="tab" onclick="switchTab('resources')">👥 Recursos</div>
+  <div class="tab" onclick="switchTab('overview')">📋 Resumo</div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- ══════════════════ PARAMS ══════════════════ -->
+  <div class="panel active" id="panel-params">
+
+    <div class="params-grid">
+
+      <!-- Start & Rooms -->
+      <div class="param-card">
+        <h3><span class="dot" style="background:var(--accent)"></span>Configuração Geral</h3>
+        <div class="param-row">
+          <label>Data de início<small>Primeiro ciclo: fazer clones</small></label>
+          <input type="date" class="date-input" id="startDate" value="2026-05-25">
+        </div>
+        <div class="param-row">
+          <label>Salas de cultivo</label>
+          <div class="num-input">
+            <button onclick="adj('nRooms',-1)">−</button>
+            <input type="number" id="nRooms" value="2" min="1" max="8" oninput="scheduleRecalc()">
+            <button onclick="adj('nRooms',1)">+</button>
+          </div>
+        </div>
+        <div class="param-row">
+          <label>Genéticas disponíveis<small>Quantas entram na rotação</small></label>
+          <div class="num-input">
+            <button onclick="adj('nGenetics',-1)">−</button>
+            <input type="number" id="nGenetics" value="5" min="1" max="10" oninput="scheduleRecalc()">
+            <button onclick="adj('nGenetics',1)">+</button>
+          </div>
+        </div>
+        <div class="param-row">
+          <label>Trocar genética a cada<small>N.º de cultivos consecutivos da mesma genética</small></label>
+          <div class="num-input">
+            <button onclick="adj('geneticRotationEvery',-1)">−</button>
+            <input type="number" id="geneticRotationEvery" value="3" min="1" max="12" oninput="scheduleRecalc()">
+            <button onclick="adj('geneticRotationEvery',1)">+</button>
+            
+          </div>
+        </div>
+        <div class="param-row">
+          <label>Horizonte planeamento<small>Em meses</small></label>
+          <div class="num-input">
+            <button onclick="adj('horizonMonths',-1)">−</button>
+            <input type="number" id="horizonMonths" value="24" min="3" max="36" oninput="scheduleRecalc()">
+            <button onclick="adj('horizonMonths',1)">+</button>
+            
+          </div>
+        </div>
+      </div>
+
+      <!-- Clone room -->
+      <div class="param-card">
+        <h3><span class="dot" style="background:var(--c-clone)"></span>Sala de Clones</h3>
+        <div class="param-row">
+          <label>Fazer clones<small>Tarefa humana na sala de clones</small></label>
+          <div class="num-input">
+            <button onclick="adj('dCloneCut',-1)">−</button>
+            <input type="number" id="dCloneCut" step="0.5" value="1" min="1" max="5" oninput="scheduleRecalc()">
+            <button onclick="adj('dCloneCut',1)">+</button>
+            <span class="unit">d</span>
+          </div>
+        </div>
+        <div class="param-row">
+          <label>Enraizamento<small>Tempo em propagação antes da ida para cultivo</small></label>
+          <div class="num-input">
+            <button onclick="adj('dCloneRoot',-1)">−</button>
+            <input type="number" id="dCloneRoot" step="0.5" value="15" min="7" max="21" oninput="scheduleRecalc()">
+            <button onclick="adj('dCloneRoot',1)">+</button>
+            <span class="unit">d</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cultivation phases -->
+      <div class="param-card">
+        <h3><span class="dot" style="background:var(--c-flower)"></span>Sala de Cultivo</h3>
+        <div class="param-row">
+          <label>Preparar sala de cultivo<small>Inchar blocos / preparar substrato no dia anterior</small></label>
+          <div class="num-input">
+            <button onclick="adj('dPrepCultRoom',-1)">−</button>
+            <input type="number" id="dPrepCultRoom" step="0.5" value="1" min="1" max="5" oninput="scheduleRecalc()">
+            <button onclick="adj('dPrepCultRoom',1)">+</button>
+            <span class="unit">d</span>
+          </div>
+        </div>
+        <div class="param-row">
+          <label>Entrada na sala de cultivo / transplante<small>Tarefa única de entrada + transplante</small></label>
+          <div class="num-input">
+            <button onclick="adj('dTransplant',-1)">−</button>
+            <input type="number" id="dTransplant" step="0.5" value="1" min="1" max="5" oninput="scheduleRecalc()">
+            <button onclick="adj('dTransplant',1)">+</button>
+            <span class="unit">d</span>
+          </div>
+        </div>
+        <div class="param-row">
+          <label>Vegetação (18/6)</label>
+          <div class="num-input">
+            <button onclick="adj('dVeg',-1)">−</button>
+            <input type="number" id="dVeg" step="0.5" value="4" min="1" max="30" oninput="scheduleRecalc()">
+            <button onclick="adj('dVeg',1)">+</button>
+            <span class="unit">d</span>
+          </div>
+        </div>
+        <div class="param-row">
+          <label>Floração (12/12)</label>
+          <div class="num-input">
+            <button onclick="adj('dFlower',-1)">−</button>
+            <input type="number" id="dFlower" step="0.5" value="55" min="30" max="100" oninput="scheduleRecalc()">
+            <button onclick="adj('dFlower',1)">+</button>
+            <span class="unit">d</span>
+          </div>
+        </div>
+        <div class="param-row">
+          <label>Colheita</label>
+          <div class="num-input">
+            <button onclick="adj('dHarvest',-1)">−</button>
+            <input type="number" id="dHarvest" step="0.5" value="3" min="1" max="7" oninput="scheduleRecalc()">
+            <button onclick="adj('dHarvest',1)">+</button>
+            <span class="unit">d</span>
+          </div>
+        </div>
+        <div class="param-row">
+          <label>Limpeza + desinfeção sala<small>Paredes, chão, rega, HVAC</small></label>
+          <div class="num-input">
+            <button onclick="adj('dCleanRoom',-1)">−</button>
+            <input type="number" id="dCleanRoom" step="0.5" value="4" min="1" max="14" oninput="scheduleRecalc()">
+            <button onclick="adj('dCleanRoom',1)">+</button>
+            <span class="unit">d</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Post-harvest -->
+      <div class="param-card">
+        <h3><span class="dot" style="background:var(--c-dry)"></span>Pós-Colheita (GMP)</h3>
+        <div class="param-row">
+          <label>Secagem<small>18°C / 55-60% RH</small></label>
+          <div class="num-input">
+            <button onclick="adj('dDry',-1)">−</button>
+            <input type="number" id="dDry" step="0.5" value="14" min="7" max="21" oninput="scheduleRecalc()">
+            <button onclick="adj('dDry',1)">+</button>
+            <span class="unit">d</span>
+          </div>
+        </div>
+        <div class="param-row">
+          <label>Salas de secagem<small>Cada sala seca apenas 1 batch de cada vez</small></label>
+          <div class="num-input">
+            <button onclick="adj('nDryRooms',-1)">−</button>
+            <input type="number" id="nDryRooms" value="1" min="1" max="12" oninput="scheduleRecalc()">
+            <button onclick="adj('nDryRooms',1)">+</button>
+          </div>
+        </div>
+        <div class="param-row">
+          <label>Limpeza sala secagem<small>Deep clean 32h</small></label>
+          <div class="num-input">
+            <button onclick="adj('dCleanDry',-1)">−</button>
+            <input type="number" id="dCleanDry" step="0.5" value="2" min="1" max="5" oninput="scheduleRecalc()">
+            <button onclick="adj('dCleanDry',1)">+</button>
+            <span class="unit">d</span>
+          </div>
+        </div>
+        <div class="param-row">
+          <label>Gross trim<small>Após secagem</small></label>
+          <div class="num-input">
+            <button onclick="adj('dGtrim',-1)">−</button>
+            <input type="number" id="dGtrim" step="0.5" value="2" min="1" max="5" oninput="scheduleRecalc()">
+            <button onclick="adj('dGtrim',1)">+</button>
+            <span class="unit">d</span>
+          </div>
+        </div>
+        <div class="param-row">
+          <label>Fine trim<small>5 pessoas</small></label>
+          <div class="num-input">
+            <button onclick="adj('dFtrim',-1)">−</button>
+            <input type="number" id="dFtrim" step="0.5" value="15" min="3" max="30" oninput="scheduleRecalc()">
+            <button onclick="adj('dFtrim',1)">+</button>
+            <span class="unit">d</span>
+          </div>
+        </div>
+        <div class="param-row">
+          <label>Packaging</label>
+          <div class="num-input">
+            <button onclick="adj('dPack',-1)">−</button>
+            <input type="number" id="dPack" step="0.5" value="4" min="1" max="10" oninput="scheduleRecalc()">
+            <button onclick="adj('dPack',1)">+</button>
+            <span class="unit">d</span>
+          </div>
+        </div>
+        <div class="param-row">
+          <label>Labelling + QC</label>
+          <div class="num-input">
+            <button onclick="adj('dLabel',-1)">−</button>
+            <input type="number" id="dLabel" step="0.5" value="2" min="1" max="5" oninput="scheduleRecalc()">
+            <button onclick="adj('dLabel',1)">+</button>
+            <span class="unit">d</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Genetics -->
+      <div class="param-card">
+        <h3><span class="dot" style="background:var(--c-mother)"></span>Genéticas</h3>
+        <div class="genetics-list" id="geneticsList"></div>
+      </div>
+
+      <!-- Human resources -->
+      <div class="param-card">
+        <h3><span class="dot" style="background:var(--c-pack)"></span>Recursos Humanos</h3>
+        <div class="param-row" style="align-items:flex-start">
+          <label class="inline-check">
+            <input type="checkbox" id="avoidNationalHolidays" checked onchange="scheduleRecalc()">
+            Evitar fins de semana e feriados nacionais nas tarefas humanas
+          </label>
+        </div>
+        <div class="param-row" style="align-items:flex-start">
+          <label class="inline-check">
+            <input type="checkbox" id="pauseTrimForOtherTasks" checked onchange="scheduleRecalc()">
+            Permitir pausar o fine trim para fazer outras tarefas humanas no mesmo dia
+          </label>
+        </div>
+        <div class="param-row" style="align-items:flex-start">
+          <label class="inline-check">
+            <input type="checkbox" id="pausePackLabelForOtherTasks" onchange="scheduleRecalc()">
+            Permitir mover Packaging e Labelling para dias livres para baixar o pico de pessoas
+          </label>
+        </div>
+        <div class="resource-config-list" id="staffingInputs"></div>
+        <div class="resource-note">
+          Define quantas pessoas cada atividade consome. A duração vem dos dias definidos nos cartões das salas. Fases passivas, como floração ou secagem em si, podem ficar a 0. As tarefas de clones e preparação de sala ficam separadas. A entrada na sala de cultivo e o transplante são uma única tarefa. Quando a pausa do fine trim está ativa, o fine trim salta meios-dias onde já existam outras tarefas humanas. Quando a opção de Packaging e Labelling está ativa, essas duas tarefas também podem ser empurradas para dias livres para baixar o pico de headcount, mesmo que isso prolongue o fecho do lote.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Status + metrics -->
+    <div id="statusBanner"></div>
+    <div class="metrics-row" id="metricsRow"></div>
+
+  </div>
+
+  <!-- ══════════════════ CALENDAR ══════════════════ -->
+  <div class="panel" id="panel-calendar">
+
+    <div class="cal-filter" id="calFilter"></div>
+
+    <div class="cal-nav">
+      <button onclick="calPrev()">‹</button>
+      <h2 id="calTitle"></h2>
+      <button onclick="calNext()">›</button>
+    </div>
+
+    <div class="cal-month" id="calMonth">
+      <div class="cal-weekdays">
+        <div class="cal-weekday">Seg</div>
+        <div class="cal-weekday">Ter</div>
+        <div class="cal-weekday">Qua</div>
+        <div class="cal-weekday">Qui</div>
+        <div class="cal-weekday">Sex</div>
+        <div class="cal-weekday weekend">Sáb</div>
+        <div class="cal-weekday weekend">Dom</div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════ GANTT ══════════════════ -->
+  <div class="panel" id="panel-gantt">
+
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+      <label style="font-size:11px;color:var(--muted)">Zoom:</label>
+      <input type="range" id="ganttZoom" min="3" max="16" value="6" oninput="renderGantt()" style="width:120px;accent-color:var(--accent)">
+      <label style="font-size:11px;color:var(--muted)">Mostrar:</label>
+      <select id="ganttScope" onchange="renderGantt()" style="font-family:'DM Mono',monospace;font-size:11px;border:1px solid var(--border);border-radius:6px;padding:4px 8px;background:var(--surface)">
+        <option value="3">3 meses</option>
+        <option value="6" selected>6 meses</option>
+        <option value="12">12 meses</option>
+        <option value="24">24 meses</option>
+      </select>
+    </div>
+
+    <div class="legend-grid" id="ganttLegend"></div>
+    <div class="gantt-wrap" id="ganttWrap"></div>
+
+  </div>
+
+
+  <!-- ══════════════════ RESOURCES ══════════════════ -->
+  <div class="panel" id="panel-resources">
+    <div class="metrics-row" id="resourceMetrics"></div>
+    <div class="resource-grid">
+      <div class="resource-card">
+        <div class="section-title">Carga por atividade</div>
+        <div class="resource-bars" id="resourceBars"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="resource-chart-wrap">
+          <div class="section-title">Próximos dias críticos</div>
+          <div class="resource-table-wrap" style="padding:0;border:none;box-shadow:none">
+            <div id="resourceTimeline"></div>
+          </div>
+        </div>
+        <div class="resource-card">
+          <div class="section-title">Legenda de recursos</div>
+          <div class="resource-legend" id="resourceLegend"></div>
+          <div class="resource-note">
+            O total diário soma apenas tarefas que exigem pessoas. Fases passivas continuam a existir no plano mas não entram no headcount.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ OVERVIEW ══════════════════ -->
+  <div class="panel" id="panel-overview">
+    <div id="overviewContent"></div>
+  </div>
+
+</div>
+
+<!-- DAY DRAWER -->
+<div class="overlay" id="overlay" onclick="closeDrawer(event)">
+  <div class="drawer" id="drawer">
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    <h3 id="drawerTitle"></h3>
+    <div class="event-list" id="drawerEvents"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA & STATE
+// ═══════════════════════════════════════════
+
+const GENETICS_COLORS = ['#e05050','#d07020','#9aac2a','#2a9a6a','#2870c8','#7850c8','#c84090','#c86030','#507aaa','#80a840'];
+
+
+const PHASE_COLORS = {
+  veg:        '#4a9e5c',
+  flower:     '#8ab83a',
+  harvest:    '#e8a030',
+  dry:        '#d4704a',
+  gtrim:      '#8870c8',
+  ftrim:      '#6090d8',
+  pack:       '#3a9ec8',
+  label:      '#2a7a9a',
+  cleanRoom:  '#a09060',
+  cleanDry:   '#c08050',
+  clone:      '#3d8868',
+  holiday:    '#e05050',
+  transplant: '#2f7a45',
+  dryMonitor:   '#9a5ac9',
+  cloneCut:     '#3b8a76',
+  cloneTransfer:'#2e6f86',
+  prepRoom:     '#a56b2a'
+};
+
+const PHASE_LABELS = {
+  veg:'VEG',
+  flower:'FLOR',
+  harvest:'COLHEITA',
+  dry:'SECAGEM',
+  gtrim:'G.TRIM',
+  ftrim:'F.TRIM',
+  pack:'PACK',
+  label:'LABEL',
+  cleanRoom:'LIMP.SALA',
+  cleanDry:'LIMP.SEC',
+  clone:'CLONES',
+  holiday:'FERIADO',
+  transplant:'ENTRADA/TRANSP.',
+  cloneCut:'FAZER CLONES',
+  prepRoom:'PREP.SALA'
+};
+
+
+
+// Portugal national holidays
+let HOLIDAYS_RAW = [];
+let HOLIDAY_NAMES = {};
+let HOLIDAYS = new Set();
+
+const STAFFING_DEFAULTS = {
+  cloneCut:   { label: 'Fazer clones', people: 2, hint: 'feito na sala de clones' },
+  prepRoom:   { label: 'Preparar sala de cultivo', people: 2, hint: 'inchar blocos / preparar substrato' },
+  transplant: { label: 'Entrada na sala de cultivo / transplante', people: 4, hint: 'entrada em cultivo + transplante para blocos / mesas' },
+  harvest:    { label: 'Colheita', people: 4, hint: 'apenas colheita' },
+  cleanRoom:  { label: 'Limpeza + desinfeção sala', people: 3, hint: 'limpeza e desinfeção' },
+  cleanDry:   { label: 'Limpeza sala secagem', people: 2, hint: 'após saída do lote' },
+  gtrim:      { label: 'Gross trim', people: 3, hint: 'equipa dedicada' },
+  ftrim:      { label: 'Fine trim', people: 5, hint: 'por defeito 5 pessoas' },
+  pack:       { label: 'Packaging', people: 3, hint: 'pesagem e selagem' },
+  label:      { label: 'Labelling + QC', people: 2, hint: 'rotulagem e controlo final' }
+};
+
+function normalizeStaffingEntry(key, cfg = {}) {
+  const meta = STAFFING_DEFAULTS[key] || {};
+  return {
+    ...cfg,
+    ...meta,
+    people: Number.isFinite(parseInt(cfg.people, 10)) ? Math.max(0, parseInt(cfg.people, 10)) : (meta.people || 0),
+    label: meta.label || key,
+    hint: meta.hint || ''
+  };
+}
+
+function normalizeStaffingConfig(raw = {}) {
+  const normalized = {};
+  Object.keys(STAFFING_DEFAULTS).forEach((key) => {
+    normalized[key] = normalizeStaffingEntry(key, raw[key] || {});
+  });
+  return normalized;
+}
+
+function getTaskLabel(type) {
+  return STAFFING_DEFAULTS[type]?.label || PHASE_LABELS[type] || type;
+}
+
+let state = {
+  events: [],
+  resourceEvents: [],
+  resourceByDate: {},
+  resourceSummary: {},
+  calYear: null,
+  calMonth: null,
+  activeFilters: new Set(['clone','cloneCut','prepRoom','transplant','veg','flower','harvest','dry','gtrim','ftrim','pack','label','cleanRoom','cleanDry','holiday']),
+  geneticNames: ['G1','G2','G3','G4','G5'],
+  staffing: normalizeStaffingConfig(),
+};
+
+const STORAGE_KEY = 'ciclo_perpetuo_gmp_state_v8';
+let recalcScheduled = false;
+
+function easterSunday(year) {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month - 1, day);
+}
+
+function dsFromDateObj(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function shiftDateObj(dateObj, deltaDays) {
+  const d = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+  d.setDate(d.getDate() + deltaDays);
+  return d;
+}
+
+function buildPortugalNationalHolidays(years) {
+  const raw = [];
+  const names = {};
+  const fixed = [
+    ['01-01', 'Ano Novo'],
+    ['04-25', 'Dia da Liberdade'],
+    ['05-01', 'Dia do Trabalhador'],
+    ['06-10', 'Dia de Portugal'],
+    ['08-15', 'Assunção'],
+    ['10-05', 'Implantação da República'],
+    ['11-01', 'Todos os Santos'],
+    ['12-01', 'Restauração da Independência'],
+    ['12-08', 'Imaculada Conceição'],
+    ['12-25', 'Natal']
+  ];
+
+  years.forEach(year => {
+    fixed.forEach(([mmdd, name]) => {
+      const ds = `${year}-${mmdd}`;
+      raw.push(ds);
+      names[ds] = name;
+    });
+
+    const easter = easterSunday(year);
+    const carnival = dsFromDateObj(shiftDateObj(easter, -47));
+    const goodFriday = dsFromDateObj(shiftDateObj(easter, -2));
+    const easterSundayDs = dsFromDateObj(easter);
+    const corpusChristi = dsFromDateObj(shiftDateObj(easter, 60));
+
+    raw.push(carnival, goodFriday, easterSundayDs, corpusChristi);
+    names[carnival] = 'Carnaval';
+    names[goodFriday] = 'Sexta-Feira Santa';
+    names[easterSundayDs] = 'Páscoa';
+    names[corpusChristi] = 'Corpo de Deus';
+  });
+
+  return {
+    raw: Array.from(new Set(raw)).sort(),
+    names
+  };
+}
+
+function refreshHolidaySet(startYear, horizonMonths) {
+  const years = [];
+  const totalYears = Math.max(2, Math.ceil((horizonMonths || 24) / 12) + 2);
+  for (let y = startYear - 1; y <= startYear + totalYears; y++) years.push(y);
+  const data = buildPortugalNationalHolidays(years);
+  HOLIDAYS_RAW = data.raw;
+  HOLIDAY_NAMES = data.names;
+  HOLIDAYS = new Set(HOLIDAYS_RAW);
+}
+
+function saveState() {
+  try {
+    const payload = {
+      inputs: Array.from(document.querySelectorAll('input')).reduce((acc, el) => {
+        if (!el.id) return acc;
+        acc[el.id] = el.type === 'checkbox' ? el.checked : el.value;
+        return acc;
+      }, {}),
+      staffing: Object.fromEntries(Object.entries(state.staffing || {}).map(([key, cfg]) => [key, { people: cfg.people }])),
+      geneticNames: state.geneticNames,
+      activeFilters: Array.from(state.activeFilters),
+      calYear: state.calYear,
+      calMonth: state.calMonth,
+      ganttZoom: document.getElementById('ganttZoom')?.value,
+      ganttScope: document.getElementById('ganttScope')?.value,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  } catch (err) {
+    console.warn('Falha ao guardar estado:', err);
+  }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const payload = JSON.parse(raw);
+    if (payload.inputs) {
+      Object.entries(payload.inputs).forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (el.type === 'checkbox') el.checked = !!value;
+        else el.value = value;
+      });
+    }
+    if (payload.staffing && typeof payload.staffing === 'object') {
+      state.staffing = normalizeStaffingConfig(payload.staffing);
+    }
+    if (Array.isArray(payload.geneticNames) && payload.geneticNames.length) {
+      state.geneticNames = payload.geneticNames;
+    }
+    if (Array.isArray(payload.activeFilters) && payload.activeFilters.length) {
+      state.activeFilters = new Set(payload.activeFilters);
+    }
+    if (Number.isInteger(payload.calYear)) state.calYear = payload.calYear;
+    if (Number.isInteger(payload.calMonth)) state.calMonth = payload.calMonth;
+    if (payload.ganttZoom && document.getElementById('ganttZoom')) document.getElementById('ganttZoom').value = payload.ganttZoom;
+    if (payload.ganttScope && document.getElementById('ganttScope')) document.getElementById('ganttScope').value = payload.ganttScope;
+  } catch (err) {
+    console.warn('Falha ao carregar estado:', err);
+  }
+}
+
+function hardFail(message, err) {
+  console.error(message, err);
+  const banner = document.getElementById('statusBanner');
+  if (banner) {
+    banner.innerHTML = `<div class="status-banner status-error"><span class="icon">⚠</span><div><strong>${message}</strong><br>${err?.message || err || 'Erro desconhecido'}</div></div>`;
+  }
+}
+
+function scheduleRecalc() {
+  if (recalcScheduled) return;
+  recalcScheduled = true;
+  requestAnimationFrame(() => {
+    recalcScheduled = false;
+    recalc();
+  });
+}
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+
+const FRACTIONAL_IDS = new Set(['dCloneCut','dCloneRoot','dPrepCultRoom','dTransplant','dVeg','dFlower','dHarvest','dCleanRoom','dDry','dCleanDry','dGtrim','dFtrim','dPack','dLabel']);
+
+function vi(id) {
+  const raw = parseInt(document.getElementById(id).value, 10);
+  return Number.isFinite(raw) ? raw : 0;
+}
+
+function vf(id) {
+  const raw = parseFloat(document.getElementById(id).value);
+  if (!Number.isFinite(raw)) return 0;
+  return Math.max(0, Math.round(raw * 2) / 2);
+}
+
+function v(id) { return FRACTIONAL_IDS.has(id) ? vf(id) : vi(id); }
+function vd(id) { return document.getElementById(id).value; }
+
+function fmtNum(n) {
+  return Number.isInteger(n) ? String(n) : String(n).replace('.', ',');
+}
+
+function roundHalf(n) {
+  const raw = Number(n) || 0;
+  return Math.round(raw * 2) / 2;
+}
+
+function adj(id, delta) {
+  const el = document.getElementById(id);
+  const isFractional = FRACTIONAL_IDS.has(id);
+  const step = isFractional ? 0.5 : 1;
+  const min = parseFloat(el.min || (isFractional ? 0 : 1));
+  const max = parseFloat(el.max || 999);
+  const current = isFractional ? (parseFloat(el.value) || 0) : (parseInt(el.value || 0, 10) || 0);
+  const next = Math.max(min, Math.min(max, roundHalf(current + (delta * step))));
+  el.value = Number.isInteger(next) ? String(next) : String(next);
+  recalc();
+}
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+
+function dateStr(d) {
+  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+}
+
+function addDays(dateStrValue, n) {
+  const [y, m, d] = dateStrValue.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + n);
+  return dateStr(dt);
+}
+
+function dateStr_(d) {
+  return dateStr(d);
+}
+
+function isWorkday(ds) {
+  const d = new Date(ds + 'T00:00:00');
+  const dow = d.getDay(); // 0=Sun,6=Sat
+  if (dow === 0 || dow === 6) return false;
+  if (HOLIDAYS.has(ds)) return false;
+  return true;
+}
+
+function nextWorkday(ds) {
+  let d = ds;
+  while (!isWorkday(d)) d = addDays(d, 1);
+  return d;
+}
+
+// advance by N workdays from a start date
+function addWorkdays(ds, n) {
+  let d = ds;
+  let count = 0;
+  while (count < n) {
+    d = addDays(d, 1);
+    if (isWorkday(d)) count++;
+  }
+  return d;
+}
+
+function daysBetween(a, b) {
+  const da = new Date(a + 'T00:00:00');
+  const db = new Date(b + 'T00:00:00');
+  return Math.round((db - da) / 86400000);
+}
+
+function formatDate(ds) {
+  const d = new Date(ds + 'T00:00:00');
+  return d.toLocaleDateString('pt-PT', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function avoidHolidayScheduling() {
+  return !!document.getElementById('avoidNationalHolidays')?.checked;
+}
+
+function pauseTrimForOtherTasks() {
+  return !!document.getElementById('pauseTrimForOtherTasks')?.checked;
+}
+
+function pausePackLabelForOtherTasks() {
+  return !!document.getElementById('pausePackLabelForOtherTasks')?.checked;
+}
+
+
+function isNationalHoliday(ds) {
+  return HOLIDAYS.has(ds);
+}
+
+
+function isStandardHumanDay(ds) {
+  return isWorkday(ds);
+}
+
+function nextAllowedDay(ds, predicate) {
+  let d = ds;
+  let guard = 0;
+  while (!predicate(d)) {
+    d = addDays(d, 1);
+    guard++;
+    if (guard > 4000) throw new Error('Loop ao procurar próximo dia permitido');
+  }
+  return d;
+}
+
+function getScheduledDates(startDs, durationDays, predicate) {
+  const out = [];
+  let d = nextAllowedDay(startDs, predicate);
+  let guard = 0;
+  while (out.length < durationDays) {
+    if (predicate(d)) out.push(d);
+    d = addDays(d, 1);
+    guard++;
+    if (guard > 4000) throw new Error('Loop ao distribuir dias úteis');
+  }
+  return out;
+}
+
+function getScheduledDatesBackward(endExclusiveDs, durationDays, predicate) {
+  const out = [];
+  let d = addDays(endExclusiveDs, -1);
+  let guard = 0;
+  while (out.length < durationDays) {
+    if (predicate(d)) out.unshift(d);
+    d = addDays(d, -1);
+    guard++;
+    if (guard > 4000) throw new Error('Loop ao distribuir dias úteis para trás');
+  }
+  return out;
+}
+
+function emitHumanTaskDates(targetEvents, targetResources, key, dates, room, genetic, label, people) {
+  dates.forEach(ds => {
+    pushSingleDayEvent(targetEvents, key, ds, room, genetic, label, { color: PHASE_COLORS[key], staff: people });
+    pushSingleDayEvent(targetResources, key, ds, room, genetic, label, { color: PHASE_COLORS[key], staff: people, resourceOnly: true });
+  });
+}
+
+function nextDayAfterDates(dates) {
+  if (!dates || !dates.length) return null;
+  return addDays(dates[dates.length - 1], 1);
+}
+
+function normalizeMarker(markerOrDate) {
+  if (!markerOrDate) return { date: null, frac: 0 };
+  if (typeof markerOrDate === 'string') return { date: markerOrDate, frac: 0 };
+  let date = markerOrDate.date;
+  let frac = roundHalf(markerOrDate.frac || 0);
+  while (frac >= 1) {
+    date = addDays(date, 1);
+    frac -= 1;
+  }
+  while (frac < 0) {
+    date = addDays(date, -1);
+    frac += 1;
+  }
+  return { date, frac };
+}
+
+function markerToHalfIndex(marker) {
+  const m = normalizeMarker(marker);
+  return daysBetween('1970-01-01', m.date) * 2 + Math.round(m.frac * 2);
+}
+
+function compareMarkers(a, b) {
+  return markerToHalfIndex(a) - markerToHalfIndex(b);
+}
+
+function addHalfDaysToMarker(markerOrDate, halfUnits) {
+  const base = normalizeMarker(markerOrDate);
+  const total = markerToHalfIndex(base) + halfUnits;
+  const dayOffset = Math.floor(total / 2);
+  const frac = ((total % 2) + 2) % 2 / 2;
+  return normalizeMarker({ date: addDays('1970-01-01', dayOffset), frac });
+}
+
+function addMarkerDuration(markerOrDate, durationDays) {
+  return addHalfDaysToMarker(markerOrDate, Math.round(roundHalf(durationDays) * 2));
+}
+
+function markerOffsetFrom(startDs, marker) {
+  const m = normalizeMarker(marker);
+  return daysBetween(startDs, m.date) + (m.frac || 0);
+}
+
+function markerToSlotKey(markerOrSlot) {
+  const m = normalizeMarker(markerOrSlot.startFrac !== undefined ? { date: markerOrSlot.date, frac: markerOrSlot.startFrac } : markerOrSlot);
+  return `${m.date}@${m.frac}`;
+}
+
+function groupSlotsToSegments(slots) {
+  if (!slots.length) return [];
+  const sorted = [...slots].sort((a, b) => compareMarkers(a, b));
+  const out = [];
+  let current = { date: sorted[0].date, startFrac: sorted[0].startFrac, units: 1 };
+  for (let i = 1; i < sorted.length; i++) {
+    const prevMarker = { date: sorted[i - 1].date, frac: sorted[i - 1].startFrac };
+    const nextExpected = addHalfDaysToMarker(prevMarker, 1);
+    if (sorted[i].date === nextExpected.date && sorted[i].startFrac === nextExpected.frac) {
+      current.units += 1;
+    } else {
+      out.push(current);
+      current = { date: sorted[i].date, startFrac: sorted[i].startFrac, units: 1 };
+    }
+  }
+  out.push(current);
+  return out.map(seg => ({ ...seg, dur: seg.units * 0.5 }));
+}
+
+function emitHumanTaskSegments(targetEvents, targetResources, key, slots, room, genetic, label, people) {
+  const segments = groupSlotsToSegments(slots);
+  segments.forEach(seg => {
+    pushSpanEvent(targetEvents, key, seg.date, seg.dur, room, genetic, label, { color: PHASE_COLORS[key], staff: people, startFrac: seg.startFrac });
+  });
+  slots.forEach(slot => {
+    pushSpanEvent(targetResources, key, slot.date, 0.5, room, genetic, label, { color: PHASE_COLORS[key], staff: people, startFrac: slot.startFrac, resourceOnly: true });
+  });
+}
+
+function pushSpanEvent(target, type, startDs, durationDays, room, genetic, label, options = {}) {
+  const startFrac = roundHalf(options.startFrac || 0);
+  const dur = roundHalf(durationDays);
+  const endMarker = addMarkerDuration({ date: startDs, frac: startFrac }, dur);
+  const calendarSpanDays = Math.max(1, Math.ceil(startFrac + dur - 1e-9));
+  target.push({
+    date: startDs,
+    startFrac,
+    endDate: addDays(startDs, calendarSpanDays),
+    endFrac: endMarker.frac,
+    endMarkerDate: endMarker.date,
+    type,
+    room,
+    genetic,
+    label: label || PHASE_LABELS[type] || type,
+    color: options.color || PHASE_COLORS[type] || '#888',
+    dur,
+    staff: options.staff || 0,
+    resourceOnly: !!options.resourceOnly
+  });
+}
+
+function pushSingleDayEvent(target, type, ds, room, genetic, label, options = {}) {
+  pushSpanEvent(target, type, ds, options.dur || 1, room, genetic, label, { ...options, startFrac: options.startFrac || 0 });
+}
+
+// ═══════════════════════════════════════════
+// SCHEDULE GENERATION
+// ═══════════════════════════════════════════
+
+
+function recalc() {
+  try {
+    buildGeneticsList();
+    buildStaffingInputs();
+
+    const p = {
+      start:      vd('startDate'),
+      nRooms:     v('nRooms'),
+      nGenetics:  v('nGenetics'),
+      geneticRotationEvery: v('geneticRotationEvery'),
+      nDryRooms:  v('nDryRooms'),
+      horizon:    v('horizonMonths') * 30,
+      horizonMonths: v('horizonMonths'),
+      dCloneCut:  v('dCloneCut'),
+      dCloneRoot: v('dCloneRoot'),
+      dPrepCultRoom: v('dPrepCultRoom'),
+      dTransplant: v('dTransplant'),
+      dVeg:       v('dVeg'),
+      dFlower:    v('dFlower'),
+      dHarvest:   v('dHarvest'),
+      dCleanRoom: v('dCleanRoom'),
+      dDry:       v('dDry'),
+      dCleanDry:  v('dCleanDry'),
+      dGtrim:     v('dGtrim'),
+      dFtrim:     v('dFtrim'),
+      dPack:      v('dPack'),
+      dLabel:     v('dLabel'),
+      avoidHolidayScheduling: avoidHolidayScheduling(),
+      pauseTrimForOtherTasks: pauseTrimForOtherTasks(),
+      pausePackLabelForOtherTasks: pausePackLabelForOtherTasks(),
+    };
+
+    refreshHolidaySet(new Date(p.start + 'T00:00:00').getFullYear(), p.horizonMonths);
+
+    const roomCycle = p.dPrepCultRoom + p.dTransplant + p.dVeg + p.dFlower + p.dHarvest + p.dCleanRoom;
+    const postHarvestDur = p.dDry + p.dGtrim + p.dFtrim + p.dPack + p.dLabel;
+    const dryCycleDur = p.dDry + p.dCleanDry;
+    const interval = roomCycle / Math.max(1, p.nRooms);
+    const dryCapacityInterval = dryCycleDur / Math.max(1, p.nDryRooms);
+    const harvestsPerYear = Math.round(365 / Math.max(1, interval));
+
+    const events = [];
+    const resourceEvents = [];
+    const harvestEvents = [];
+    const horizonEnd = addDays(p.start, p.horizon + 45);
+
+    const humanPredicate = ds => !p.avoidHolidayScheduling || isStandardHumanDay(ds);
+    const trimSharePredicate = marker => {
+      if (!humanPredicate(marker.date)) return false;
+      if (!p.pauseTrimForOtherTasks) return true;
+      const slotKey = markerToSlotKey(marker);
+      return !resourceEvents.some(ev => markerToSlotKey(ev) === slotKey && !['gtrim','ftrim'].includes(ev.type));
+    };
+
+    const packLabelSharePredicate = marker => {
+      if (!humanPredicate(marker.date)) return false;
+      if (!p.pausePackLabelForOtherTasks) return true;
+      const slotKey = markerToSlotKey(marker);
+      return !resourceEvents.some(ev => markerToSlotKey(ev) === slotKey && !['pack','label'].includes(ev.type));
+    };
+
+    function isWholeDayDuration(durationDays) {
+      const d = roundHalf(durationDays);
+      return Math.abs(d - Math.round(d)) < 1e-9;
+    }
+
+    function getScheduledSlotsForward(startMarker, durationDays, predicate = humanPredicate, slotPredicate = () => true) {
+      const dur = roundHalf(durationDays);
+      const units = Math.max(0, Math.round(dur * 2));
+      const slots = [];
+      if (units <= 0) return slots;
+
+      if (isWholeDayDuration(dur)) {
+        let marker = normalizeMarker(startMarker);
+        if (marker.frac >= 0.5) marker = { date: addDays(marker.date, 1), frac: 0 };
+        let day = marker.date;
+        let guard = 0;
+        while (slots.length < units) {
+          const amMarker = { date: day, frac: 0 };
+          const pmMarker = { date: day, frac: 0.5 };
+          if (predicate(day) && slotPredicate(amMarker) && slotPredicate(pmMarker)) {
+            slots.push({ date: day, startFrac: 0 }, { date: day, startFrac: 0.5 });
+          }
+          day = addDays(day, 1);
+          guard += 1;
+          if (guard > 8000) throw new Error('Loop ao distribuir dias inteiros para a frente');
+        }
+        return slots.slice(0, units);
+      }
+
+      let marker = normalizeMarker(startMarker);
+      let guard = 0;
+      while (slots.length < units) {
+        if (predicate(marker.date) && slotPredicate(marker)) {
+          slots.push({ date: marker.date, startFrac: marker.frac });
+        }
+        marker = addHalfDaysToMarker(marker, 1);
+        guard += 1;
+        if (guard > 8000) throw new Error('Loop ao distribuir meios-dias para a frente');
+      }
+      return slots;
+    }
+
+    function getScheduledSlotsBackward(endExclusiveMarker, durationDays, predicate = humanPredicate, slotPredicate = () => true) {
+      const dur = roundHalf(durationDays);
+      const units = Math.max(0, Math.round(dur * 2));
+      const slots = [];
+      if (units <= 0) return slots;
+
+      if (isWholeDayDuration(dur)) {
+        let marker = normalizeMarker(endExclusiveMarker);
+        let day = addDays(marker.date, -1);
+        let guard = 0;
+        while (slots.length < units) {
+          const amMarker = { date: day, frac: 0 };
+          const pmMarker = { date: day, frac: 0.5 };
+          if (predicate(day) && slotPredicate(amMarker) && slotPredicate(pmMarker)) {
+            slots.unshift({ date: day, startFrac: 0 }, { date: day, startFrac: 0.5 });
+          }
+          day = addDays(day, -1);
+          guard += 1;
+          if (guard > 8000) throw new Error('Loop ao distribuir dias inteiros para trás');
+        }
+        return slots.slice(slots.length - units);
+      }
+
+      let marker = addHalfDaysToMarker(endExclusiveMarker, -1);
+      let guard = 0;
+      while (slots.length < units) {
+        if (predicate(marker.date) && slotPredicate(marker)) {
+          slots.unshift({ date: marker.date, startFrac: marker.frac });
+        }
+        marker = addHalfDaysToMarker(marker, -1);
+        guard += 1;
+        if (guard > 8000) throw new Error('Loop ao distribuir meios-dias para trás');
+      }
+      return slots;
+    }
+
+    function slotDates(slots) {
+      return [...new Set(slots.map(s => s.date))];
+    }
+
+    function addHumanTaskForward(key, startMarker, durationDays, room, genetic, label, slotPredicate = () => true) {
+      const cfg = state.staffing[key] || STAFFING_DEFAULTS[key];
+      const people = parseInt(cfg.people || 0, 10) || 0;
+      const dur = roundHalf(durationDays);
+      if (people <= 0 || dur <= 0 || !startMarker) return { slots: [], dates: [], nextMarker: normalizeMarker(startMarker) };
+      const slots = getScheduledSlotsForward(startMarker, dur, humanPredicate, slotPredicate);
+      emitHumanTaskSegments(events, resourceEvents, key, slots, room, genetic, label, people);
+      const nextMarker = slots.length ? addHalfDaysToMarker({ date: slots[slots.length - 1].date, frac: slots[slots.length - 1].startFrac }, 1) : normalizeMarker(startMarker);
+      return { slots, dates: slotDates(slots), nextMarker, firstMarker: slots[0] ? { date: slots[0].date, frac: slots[0].startFrac } : normalizeMarker(startMarker) };
+    }
+
+    function addHumanTaskBackward(key, endExclusiveMarker, durationDays, room, genetic, label, slotPredicate = () => true) {
+      const cfg = state.staffing[key] || STAFFING_DEFAULTS[key];
+      const people = parseInt(cfg.people || 0, 10) || 0;
+      const dur = roundHalf(durationDays);
+      if (people <= 0 || dur <= 0 || !endExclusiveMarker) return { slots: [], dates: [], firstMarker: normalizeMarker(endExclusiveMarker) };
+      const slots = getScheduledSlotsBackward(endExclusiveMarker, dur, humanPredicate, slotPredicate);
+      emitHumanTaskSegments(events, resourceEvents, key, slots, room, genetic, label, people);
+      return { slots, dates: slotDates(slots), firstMarker: slots[0] ? { date: slots[0].date, frac: slots[0].startFrac } : normalizeMarker(endExclusiveMarker), nextMarker: endExclusiveMarker };
+    }
+    const roomQueue = [];
+    const initialTransplantOffset = roundHalf(p.dCloneCut + p.dCloneRoot);
+    for (let r = 0; r < p.nRooms; r++) {
+      roomQueue.push({ room: r + 1, nextBase: addMarkerDuration({ date: p.start, frac: 0 }, initialTransplantOffset + roundHalf(r * interval)) });
+    }
+
+    let globalCultivationSeq = 0;
+    let safetyCounter = 0;
+
+    while (roomQueue.length) {
+      roomQueue.sort((a, b) => {
+        const diff = compareMarkers(a.nextBase, b.nextBase);
+        return diff !== 0 ? diff : a.room - b.room;
+      });
+
+      const slot = roomQueue[0];
+      const transplantBase = normalizeMarker(slot.nextBase);
+      if (compareMarkers(transplantBase, { date: horizonEnd, frac: 1 }) > 0) break;
+
+      const gIndex = Math.floor(globalCultivationSeq / Math.max(1, p.geneticRotationEvery)) % p.nGenetics;
+
+      const transplantTask = addHumanTaskForward('transplant', transplantBase, p.dTransplant, `Sala ${slot.room}`, gIndex, `Entrada/transplante Sala ${slot.room} G${gIndex+1}`);
+      const transplantMarker = transplantTask.firstMarker || transplantBase;
+
+      addHumanTaskBackward('prepRoom', transplantMarker, p.dPrepCultRoom, `Sala ${slot.room}`, gIndex, `Preparar sala ${slot.room} G${gIndex+1}`);
+
+      const cloneRootStart = addMarkerDuration(transplantMarker, -p.dCloneRoot);
+      addHumanTaskBackward('cloneCut', cloneRootStart, p.dCloneCut, 'Clone Room', gIndex, `Fazer clones Sala ${slot.room} G${gIndex+1}`);
+
+      pushSpanEvent(events, 'clone', cloneRootStart.date, p.dCloneRoot, 'Clone Room', gIndex, `Enraizamento Sala ${slot.room} G${gIndex+1}`, { color: GENETICS_COLORS[gIndex % GENETICS_COLORS.length], startFrac: cloneRootStart.frac });
+
+      const vegStart = transplantTask.nextMarker || addMarkerDuration(transplantMarker, p.dTransplant);
+      pushSpanEvent(events, 'veg', vegStart.date, p.dVeg, `Sala ${slot.room}`, gIndex, `Veg Sala ${slot.room} G${gIndex+1}`, { color: GENETICS_COLORS[gIndex % GENETICS_COLORS.length], startFrac: vegStart.frac });
+
+      const flowerStart = addMarkerDuration(vegStart, p.dVeg);
+      pushSpanEvent(events, 'flower', flowerStart.date, p.dFlower, `Sala ${slot.room}`, gIndex, `Floração Sala ${slot.room} G${gIndex+1}`, { color: GENETICS_COLORS[gIndex % GENETICS_COLORS.length], startFrac: flowerStart.frac });
+
+      const harvestBase = addMarkerDuration(flowerStart, p.dFlower);
+      const harvestTask = addHumanTaskForward('harvest', harvestBase, p.dHarvest, `Sala ${slot.room}`, gIndex, `Colheita Sala ${slot.room} G${gIndex+1}`);
+      const firstHarvestMarker = harvestTask.firstMarker || harvestBase;
+      const afterHarvestMarker = harvestTask.nextMarker || addMarkerDuration(firstHarvestMarker, p.dHarvest);
+
+      harvestEvents.push({ date: firstHarvestMarker.date, room: slot.room, genetic: gIndex, dryEligibleMarker: afterHarvestMarker });
+
+      const cleanTask = addHumanTaskForward('cleanRoom', afterHarvestMarker, p.dCleanRoom, `Sala ${slot.room}`, gIndex, `Limpeza Sala ${slot.room}`);
+      const roomAvailableMarker = cleanTask.nextMarker || afterHarvestMarker;
+
+      slot.nextBase = addMarkerDuration(roomAvailableMarker, p.dPrepCultRoom);
+      globalCultivationSeq++;
+      safetyCounter++;
+      if (safetyCounter > 500) break;
+    }
+
+    harvestEvents.sort((a, b) => compareMarkers(a.dryEligibleMarker || { date: a.date, frac: 0 }, b.dryEligibleMarker || { date: b.date, frac: 0 }));
+    const dryRooms = Array.from({ length: Math.max(1, p.nDryRooms) }, (_, idx) => ({
+      name: Math.max(1, p.nDryRooms) === 1 ? 'Secagem' : `Secagem ${idx + 1}`,
+      nextBase: { date: p.start, frac: 0 }
+    }));
+
+    for (const h of harvestEvents) {
+      if (h.date > horizonEnd) break;
+
+      dryRooms.sort((a, b) => {
+        const diff = compareMarkers(a.nextBase, b.nextBase);
+        return diff !== 0 ? diff : a.name.localeCompare(b.name);
+      });
+
+      const drySlot = dryRooms[0];
+      const dryRoomName = drySlot.name;
+      const dryEligible = normalizeMarker(h.dryEligibleMarker || { date: h.date, frac: 0 });
+      const dryStart = compareMarkers(dryEligible, drySlot.nextBase) > 0 ? dryEligible : normalizeMarker(drySlot.nextBase);
+      pushSpanEvent(events, 'dry', dryStart.date, p.dDry, dryRoomName, h.genetic, `Secagem R${h.room} G${h.genetic+1}`, { startFrac: dryStart.frac });
+
+      const dryEndMarker = addMarkerDuration(dryStart, p.dDry);
+
+      // Gross trim starts immediately when drying ends: plants leave the drying room
+      // directly to gross trim. Cleaning the drying room can happen in parallel and
+      // must not delay gross trim.
+      // Gross trim has priority immediately after drying ends. It must start on the
+      // first valid human-work slot after drying, only skipping weekends/holidays
+      // when that rule is enabled. The optional trim-pause logic applies only to
+      // fine trim, not to gross trim.
+      const gtrimTask = addHumanTaskForward('gtrim', dryEndMarker, p.dGtrim, 'Trim', h.genetic, `G.Trim G${h.genetic+1}`);
+      const afterGtrim = gtrimTask.nextMarker || dryEndMarker;
+
+      const cleanDryTask = addHumanTaskForward('cleanDry', dryEndMarker, p.dCleanDry, dryRoomName, h.genetic, `Limp. Secagem G${h.genetic+1}`);
+      const afterCleanDry = cleanDryTask.nextMarker || dryEndMarker;
+
+      const ftrimTask = addHumanTaskForward('ftrim', afterGtrim, p.dFtrim, 'Trim', h.genetic, `F.Trim G${h.genetic+1}`, trimSharePredicate);
+      const afterFtrim = ftrimTask.nextMarker || afterGtrim;
+
+      const packTask = addHumanTaskForward('pack', afterFtrim, p.dPack, 'Packaging', h.genetic, `Pack G${h.genetic+1}`, packLabelSharePredicate);
+      const afterPack = packTask.nextMarker || afterFtrim;
+
+      const labelTask = addHumanTaskForward('label', afterPack, p.dLabel, 'Labelling', h.genetic, `Label G${h.genetic+1}`, packLabelSharePredicate);
+
+      drySlot.nextBase = cleanDryTask.nextMarker || addMarkerDuration(dryStart, p.dDry + p.dCleanDry);
+      h.readyMarker = labelTask.nextMarker || afterPack;
+    }
+
+    for (const hd of HOLIDAYS_RAW) {
+      if (daysBetween(p.start, hd) < -7 || daysBetween(p.start, hd) > p.horizon + 45) continue;
+      pushSingleDayEvent(events, 'holiday', hd, 'Geral', -1, HOLIDAY_NAMES[hd] || 'Feriado', { color: PHASE_COLORS.holiday });
+    }
+
+    const resourceByDate = {};
+    resourceEvents.forEach(ev => {
+      if (!resourceByDate[ev.date]) resourceByDate[ev.date] = { total: 0, breakdown: {}, slots: { am: { total: 0, breakdown: {} }, pm: { total: 0, breakdown: {} } } };
+      const bucket = (ev.startFrac || 0) >= 0.5 ? 'pm' : 'am';
+      const slot = resourceByDate[ev.date].slots[bucket];
+      slot.total += ev.staff || 0;
+      slot.breakdown[ev.type] = (slot.breakdown[ev.type] || 0) + (ev.staff || 0);
+    });
+
+    Object.values(resourceByDate).forEach(row => {
+      row.total = Math.max(row.slots.am.total, row.slots.pm.total);
+      const keys = new Set([...Object.keys(row.slots.am.breakdown), ...Object.keys(row.slots.pm.breakdown)]);
+      keys.forEach(type => {
+        row.breakdown[type] = Math.max(row.slots.am.breakdown[type] || 0, row.slots.pm.breakdown[type] || 0);
+      });
+    });
+
+    const totals = Object.values(resourceByDate).map(x => x.total);
+    const maxPeople = totals.length ? Math.max(...totals) : 0;
+    const avgPeople = totals.length ? (totals.reduce((a, b) => a + b, 0) / totals.length) : 0;
+    const activeDays = totals.filter(x => x > 0).length;
+    const isOk = interval >= dryCapacityInterval;
+    const overlap = isOk ? 0 : Math.ceil(dryCapacityInterval - interval);
+
+    state.events = events;
+    state.resourceEvents = resourceEvents;
+    state.resourceByDate = resourceByDate;
+    state.resourceSummary = { maxPeople, avgPeople, activeDays };
+
+    const d0 = new Date(p.start + 'T00:00:00');
+    if (!state.calYear) {
+      state.calYear = d0.getFullYear();
+      state.calMonth = d0.getMonth();
+    }
+
+    renderMetrics({ roomCycle, interval, dryCycleDur, dryRooms: p.nDryRooms, isOk, overlap, harvestsPerYear, postHarvestDur });
+    renderStatus(isOk, overlap, interval, dryCycleDur, p.nDryRooms);
+    buildCalFilter();
+    renderCalendar();
+    renderGantt();
+    renderResources();
+    renderOverview(p, harvestEvents, roomCycle, interval, dryCycleDur, isOk);
+    saveState();
+  } catch (err) {
+    hardFail('Falha ao recalcular o planeador', err);
+  }
+}
+
+// ═══════════════════════════════════════════
+// GENETICS LIST
+// ═══════════════════════════════════════════
+
+
+function buildGeneticsList() {
+  const n = v('nGenetics');
+  while (state.geneticNames.length < n) state.geneticNames.push(`G${state.geneticNames.length+1}`);
+  const el = document.getElementById('geneticsList');
+  el.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const div = document.createElement('div');
+    div.className = 'genetic-row';
+    div.innerHTML = `
+      <span class="genetic-dot" style="background:${GENETICS_COLORS[i % GENETICS_COLORS.length]}"></span>
+      <input type="text" value="${state.geneticNames[i]}" onchange="state.geneticNames[${i}]=this.value;scheduleRecalc()" placeholder="Genética ${i+1}">
+      <span class="cycles-badge">troca após ${Math.max(1, v('geneticRotationEvery'))} cultivo(s) consecutivos</span>`;
+    el.appendChild(div);
+  }
+}
+
+function buildStaffingInputs() {
+  const el = document.getElementById('staffingInputs');
+  if (!el) return;
+  el.innerHTML = '';
+  Object.entries(STAFFING_DEFAULTS).forEach(([key, meta]) => {
+    const cfg = normalizeStaffingEntry(key, state.staffing[key] || {});
+    state.staffing[key] = cfg;
+    const row = document.createElement('div');
+    row.className = 'resource-config-row';
+    row.innerHTML = `
+      <label>
+        ${getTaskLabel(key)}
+        <small>${meta.hint}</small>
+      </label>
+      <div class="num-input">
+        <button onclick="adjStaff('${key}',-1)">−</button>
+        <input type="number" min="0" max="99" value="${state.staffing[key].people ?? meta.people}" oninput="setStaffPeople('${key}', this.value)">
+        <span class="unit">p</span>
+        <button onclick="adjStaff('${key}',1)">+</button>
+      </div>
+    `;
+    el.appendChild(row);
+  });
+}
+
+function setStaffPeople(key, value) {
+  if (!state.staffing[key]) state.staffing[key] = normalizeStaffingEntry(key, {});
+  state.staffing[key].people = Math.max(0, parseInt(value || 0, 10) || 0);
+  scheduleRecalc();
+}
+
+
+function adjStaff(key, delta) {
+  if (!state.staffing[key]) state.staffing[key] = normalizeStaffingEntry(key, {});
+  state.staffing[key].people = Math.max(0, Math.min(99, (parseInt(state.staffing[key].people || 0, 10) || 0) + delta));
+  buildStaffingInputs();
+  scheduleRecalc();
+}
+
+
+// ═══════════════════════════════════════════
+// METRICS
+// ═══════════════════════════════════════════
+
+function renderMetrics({ roomCycle, interval, dryCycleDur, dryRooms, isOk, overlap, harvestsPerYear, postHarvestDur }) {
+  const el = document.getElementById('metricsRow');
+  el.innerHTML = `
+    <div class="metric">
+      <div class="m-label">Ciclo/sala</div>
+      <div class="m-val">${roomCycle}</div>
+      <div class="m-sub">dias</div>
+    </div>
+    <div class="metric">
+      <div class="m-label">Intervalo</div>
+      <div class="m-val">${Math.round(interval*10)/10}</div>
+      <div class="m-sub">dias entre colheitas</div>
+    </div>
+    <div class="metric ${isOk?'':'danger'}">
+      <div class="m-label">Ciclo secagem</div>
+      <div class="m-val">${dryCycleDur}</div>
+      <div class="m-sub">dias/lote · ${dryRooms} sala(s)</div>
+    </div>
+    <div class="metric">
+      <div class="m-label">Pós-colheita</div>
+      <div class="m-val">${postHarvestDur}</div>
+      <div class="m-sub">dias total</div>
+    </div>
+    <div class="metric">
+      <div class="m-label">Colheitas/ano</div>
+      <div class="m-val">${harvestsPerYear}</div>
+      <div class="m-sub">lotes</div>
+    </div>
+    <div class="metric ${isOk?'':'warn'}">
+      <div class="m-label">Sobreposição</div>
+      <div class="m-val">${overlap}</div>
+      <div class="m-sub">dias bottleneck</div>
+    </div>
+  `;
+}
+
+function renderStatus(isOk, overlap, interval, dryCycleDur, dryRooms) {
+  const el = document.getElementById('statusBanner');
+  const dryRoomsSafe = Math.max(1, dryRooms || 1);
+  const margin = Math.round(((interval * dryRoomsSafe) - dryCycleDur) * 10) / 10;
+  if (isOk) {
+    el.innerHTML = `<div class="status-banner status-ok"><span class="icon">✓</span><div>Ciclo perpétuo viável. Com <strong>${dryRoomsSafe} sala(s) de secagem</strong>, a capacidade entre colheitas (${Math.round(interval*10)/10}d × ${dryRoomsSafe}) cobre o ciclo de secagem (${dryCycleDur}d). Margem de <strong>${margin} dias</strong>.</div></div>`;
+  } else {
+    el.innerHTML = `<div class="status-banner status-error"><span class="icon">⚠</span><div><strong>Bottleneck na secagem!</strong> Lotes chegam a cada ${Math.round(interval*10)/10}d e tens ${dryRoomsSafe} sala(s) de secagem, mas o ciclo ocupado por lote continua a pedir ${dryCycleDur}d. Falta capacidade equivalente a <strong>${overlap} dias</strong> — aumenta salas de secagem ou reduz durações.</div></div>`;
+  }
+}
+
+// ═══════════════════════════════════════════
+// CALENDAR
+// ═══════════════════════════════════════════
+
+function buildCalFilter() {
+  const types = ['clone','cloneCut','prepRoom','transplant','veg','flower','harvest','dry','gtrim','ftrim','pack','label','cleanRoom','cleanDry','holiday'];
+  const el = document.getElementById('calFilter');
+  el.innerHTML = types.map(t => `
+    <div class="filter-chip ${state.activeFilters.has(t)?'active':''}" 
+         style="color:${PHASE_COLORS[t]}"
+         onclick="toggleFilter('${t}')">
+      <span class="chip-dot" style="background:${PHASE_COLORS[t]}"></span>
+      ${PHASE_LABELS[t]}
+    </div>`).join('\n');
+}
+
+function toggleFilter(type) {
+  if (state.activeFilters.has(type)) state.activeFilters.delete(type);
+  else state.activeFilters.add(type);
+  buildCalFilter();
+  renderCalendar();
+}
+
+function calPrev() {
+  state.calMonth--;
+  if (state.calMonth < 0) { state.calMonth = 11; state.calYear--; }
+  renderCalendar();
+}
+
+function calNext() {
+  state.calMonth++;
+  if (state.calMonth > 11) { state.calMonth = 0; state.calYear++; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const year = state.calYear, month = state.calMonth;
+  const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  document.getElementById('calTitle').textContent = `${monthNames[month]} ${year}`;
+
+  // build day→events map
+  const dayMap = {};
+  const today = dateStr(new Date());
+  for (const ev of state.events) {
+    if (!state.activeFilters.has(ev.type)) continue;
+    // span events over their duration
+    let d = ev.date;
+    const end = ev.endDate || addDays(ev.date, 1);
+    while (d < end) {
+      const dObj = new Date(d + 'T00:00:00');
+      if (dObj.getFullYear() === year && dObj.getMonth() === month) {
+        if (!dayMap[d]) dayMap[d] = [];
+        dayMap[d].push(ev);
+      }
+      d = addDays(d, 1);
+    }
+  }
+
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  // week starts Monday
+  let startDow = firstDay.getDay(); // 0=Sun
+  startDow = startDow === 0 ? 6 : startDow - 1; // Mon=0
+
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+
+  // prev month filler
+  for (let i = 0; i < startDow; i++) {
+    const d = new Date(year, month, -startDow + i + 1);
+    const cell = document.createElement('div');
+    cell.className = 'cal-day other-month';
+    cell.innerHTML = `<div class="day-num">${d.getDate()}</div>`;
+    grid.appendChild(cell);
+  }
+
+  // actual days
+  for (let day = 1; day <= lastDay.getDate(); day++) {
+    const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const dObj = new Date(ds + 'T00:00:00');
+    const dow = dObj.getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    const isHoliday = HOLIDAYS.has(ds);
+    const isToday = ds === today;
+
+    const cell = document.createElement('div');
+    cell.className = `cal-day${isWeekend?' weekend-day':''}${isHoliday?' is-holiday':''}${isToday?' today':''}`;
+
+    const numEl = document.createElement('div');
+    numEl.className = 'day-num';
+    numEl.textContent = day;
+
+    const evList = dayMap[ds] || [];
+    // deduplicate by label for display
+    const seen = new Set();
+    const unique = evList.filter(e => { const k = e.type+e.room; if(seen.has(k)) return false; seen.add(k); return true; });
+
+    const evContainer = document.createElement('div');
+    evContainer.className = 'day-events';
+
+    const maxShow = 3;
+    unique.slice(0, maxShow).forEach(ev => {
+      const el = document.createElement('div');
+      el.className = 'day-event';
+      el.style.background = ev.color;
+      el.textContent = ev.label;
+      evContainer.appendChild(el);
+    });
+
+    if (unique.length > maxShow) {
+      const more = document.createElement('div');
+      more.className = 'more-events';
+      more.textContent = `+${unique.length - maxShow} mais`;
+      evContainer.appendChild(more);
+    }
+
+    cell.appendChild(numEl);
+    cell.appendChild(evContainer);
+    cell.onclick = () => openDayDrawer(ds, evList);
+    grid.appendChild(cell);
+  }
+
+  // next month filler
+  const cellsUsed = startDow + lastDay.getDate();
+  const remainder = cellsUsed % 7;
+  if (remainder > 0) {
+    for (let i = 1; i <= 7 - remainder; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cal-day other-month';
+      cell.innerHTML = `<div class="day-num">${i}</div>`;
+      grid.appendChild(cell);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════
+// GANTT
+// ═══════════════════════════════════════════
+
+function renderGantt() {
+  const scopeMonths = parseInt(document.getElementById('ganttScope').value);
+  const zoom = parseInt(document.getElementById('ganttZoom').value);
+  const DAY_W = zoom;
+
+  const startDs = vd('startDate') || dateStr(new Date());
+  const totalDays = scopeMonths * 30;
+  const endDs = addDays(startDs, totalDays);
+  const today = dateStr(new Date());
+  const todayOffset = daysBetween(startDs, today);
+
+  // collect rooms
+  const rooms = ['Clone Room'];
+  for (let r = 1; r <= vi('nRooms'); r++) rooms.push(`Sala ${r}`);
+  const dryRoomCount = Math.max(1, vi('nDryRooms'));
+  for (let i = 1; i <= dryRoomCount; i++) rooms.push(dryRoomCount === 1 ? 'Secagem' : `Secagem ${i}`);
+  rooms.push('Trim', 'Packaging', 'Labelling');
+
+  // group events by room
+  const roomEvents = {};
+  rooms.forEach(r => roomEvents[r] = []);
+
+  for (const ev of state.events) {
+    if (!state.activeFilters.has(ev.type)) continue;
+    if (ev.date > endDs) continue;
+    if (!roomEvents[ev.room]) roomEvents[ev.room] = [];
+    roomEvents[ev.room].push(ev);
+  }
+
+  // build legend
+  const legendEl = document.getElementById('ganttLegend');
+  legendEl.innerHTML = Object.entries(PHASE_LABELS).map(([k,v2]) =>
+    `<div class="legend-item"><span class="legend-dot" style="background:${PHASE_COLORS[k]}"></span>${v2}</div>`
+  ).join('\n');
+
+  // build day header
+  const trackW = totalDays * DAY_W;
+  document.documentElement.style.setProperty('--day-w', DAY_W + 'px');
+
+  let dayHeaderHtml = `<div style="display:flex;margin-left:130px;">`;
+  for (let d = 0; d < totalDays; d++) {
+    const ds = addDays(startDs, d);
+    const dObj = new Date(ds + 'T00:00:00');
+    const dow = dObj.getDay();
+    const isSaturday = dow === 6;
+    const isSunday = dow === 0;
+    const isWeekend = isSaturday || isSunday;
+    const isHol = HOLIDAYS.has(ds);
+    const isMonthStart = dObj.getDate() === 1;
+    let cls = '';
+    if (isMonthStart) cls += ' month-start';
+    if (isHol) cls += ' holiday-lbl';
+    else if (isSaturday) cls += ' weekend-lbl sat-lbl';
+    else if (isSunday) cls += ' weekend-lbl sun-lbl';
+    else if (isWeekend) cls += ' weekend-lbl';
+    const lbl = isMonthStart ? dObj.toLocaleDateString('pt-PT',{month:'short'}).toUpperCase() : '';
+    dayHeaderHtml += `<div class="gantt-day-lbl${cls}" style="width:${DAY_W}px;flex-shrink:0">${lbl}</div>`;
+  }
+  dayHeaderHtml += '</div>';
+
+  let ganttHtml = `<div class="gantt-inner" style="width:${trackW + 130}px">`;
+  ganttHtml += dayHeaderHtml;
+
+  for (const room of rooms) {
+    const evs = roomEvents[room] || [];
+    if (evs.length === 0 && room.startsWith('Sala') && vi('nRooms') < parseInt(room.split(' ')[1])) continue;
+
+    let trackHtml = `<div class="gantt-row-track" style="width:${trackW}px;position:relative">`;
+
+    // weekend overlays
+    for (let d = 0; d < totalDays; d++) {
+      const ds = addDays(startDs, d);
+      const dow = new Date(ds + 'T00:00:00').getDay();
+      if (dow === 6) {
+        trackHtml += `<div class="g-seg sat-seg" style="left:${d*DAY_W}px;width:${DAY_W}px"></div>`;
+      } else if (dow === 0) {
+        trackHtml += `<div class="g-seg sun-seg" style="left:${d*DAY_W}px;width:${DAY_W}px"></div>`;
+      }
+    }
+
+    // holiday overlays
+    for (const hd of HOLIDAYS_RAW) {
+      const off = daysBetween(startDs, hd);
+      if (off < 0 || off >= totalDays) continue;
+      trackHtml += `<div class="g-seg holiday-seg" style="left:${off*DAY_W}px;width:${DAY_W}px;background:${PHASE_COLORS.holiday}"></div>`;
+    }
+
+    // today line
+    if (todayOffset >= 0 && todayOffset < totalDays) {
+      trackHtml += `<div class="today-line" style="left:${todayOffset*DAY_W}px"></div>`;
+    }
+
+    for (const ev of evs) {
+      const startOffset = markerOffsetFrom(startDs, { date: ev.date, frac: ev.startFrac || 0 });
+      const dur = ev.dur || 1;
+      const left = Math.max(0, startOffset) * DAY_W;
+      const visibleDur = Math.min(dur, totalDays - Math.max(0, startOffset));
+      const w = Math.max(2, visibleDur * DAY_W);
+      const lbl = w > 30 ? ev.label : '';
+      const gName = ev.genetic >= 0 ? (state.geneticNames[ev.genetic] || `G${ev.genetic+1}`) : '';
+      trackHtml += `<div class="g-seg" 
+        style="left:${left}px;width:${w}px;background:${ev.color}"
+        title="${ev.label}${gName?' · '+gName:''} · ${formatDate(ev.date)} (${fmtNum(dur)}d)"
+        onmouseenter="showTip(event,'${ev.label}${gName?' · '+gName:''}','${formatDate(ev.date)}','${fmtNum(dur)}d')"
+        onmouseleave="hideTip()"
+      >${lbl}</div>`;
+    }
+
+    trackHtml += '</div>';
+
+    ganttHtml += `<div class="gantt-row-wrap">
+      <div class="gantt-row-label">${room}</div>
+      ${trackHtml}
+    </div>`;
+  }
+
+  ganttHtml += '</div>';
+  document.getElementById('ganttWrap').innerHTML = ganttHtml;
+}
+
+// ═══════════════════════════════════════════
+// OVERVIEW
+// ═══════════════════════════════════════════
+
+
+function renderOverview(p, harvestEvents, roomCycle, interval, dryCycleDur, isOk) {
+  const startDs = p.start;
+  const horizonEnd = addDays(startDs, p.horizon);
+
+  const upcomingHarvests = harvestEvents
+    .filter(h => h.date >= startDs && h.date <= horizonEnd)
+    .slice(0, 20);
+
+  const resourceByDate = state.resourceByDate || {};
+  const peakDays = Object.keys(resourceByDate)
+    .filter(ds => resourceByDate[ds].total > 0)
+    .sort((a, b) => {
+      const diff = resourceByDate[b].total - resourceByDate[a].total;
+      return diff !== 0 ? diff : a.localeCompare(b);
+    })
+    .slice(0, 10);
+
+  let html = `
+    <div class="section-title">Próximas Colheitas</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+  `;
+
+  upcomingHarvests.forEach((h, i) => {
+    const gName = state.geneticNames[h.genetic] || `G${h.genetic+1}`;
+    const gColor = GENETICS_COLORS[h.genetic % GENETICS_COLORS.length];
+    const readyDate = (h.readyMarker && h.readyMarker.date) ? h.readyMarker.date : addDays(h.date, Math.ceil(p.dDry + p.dGtrim + p.dFtrim + p.dPack + p.dLabel));
+    html += `
+      <div class="event-item" style="border-left-color:${gColor}">
+        <span class="e-dot" style="background:${gColor}"></span>
+        <div class="e-info">
+          <div class="e-name">Colheita #${i+1} · Sala ${h.room} · ${gName}</div>
+          <div class="e-room">${formatDate(h.date)}</div>
+          <div class="e-dur">Pronto para venda: ${formatDate(readyDate)} · ${daysBetween(h.date, readyDate)}d pós-colheita</div>
+        </div>
+      </div>`;
+  });
+
+  html += `</div>
+    <div class="section-title">Dias de pico de equipa</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+      ${peakDays.length ? peakDays.map(ds => {
+        const breakdown = Object.entries(resourceByDate[ds].breakdown || {})
+          .sort((a,b) => b[1]-a[1])
+          .map(([type,val]) => `${getTaskLabel(type)}: ${val}`)
+          .join(' · ');
+        return `
+          <div class="event-item" style="border-left-color:var(--accent)">
+            <span class="e-dot" style="background:var(--accent)"></span>
+            <div class="e-info">
+              <div class="e-name">${formatDate(ds)} · ${resourceByDate[ds].total} pessoas</div>
+              <div class="e-dur">${breakdown}</div>
+            </div>
+          </div>
+        `;
+      }).join('') : '<div class="resource-empty">Sem carga humana configurada.</div>'}
+    </div>
+    <div class="section-title">Parâmetros Resumo</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;font-size:12px;line-height:2;box-shadow:var(--shadow)">
+      <div>Ciclo por sala: <strong>${roomCycle} dias</strong> (prep ${p.dPrepCultRoom} + transpl ${p.dTransplant} + veg ${p.dVeg} + flor ${p.dFlower} + col ${p.dHarvest} + limp ${p.dCleanRoom})</div>
+      <div>Intervalo entre colheitas: <strong>${Math.round(interval*10)/10} dias</strong> (${roomCycle}d ÷ ${p.nRooms} salas)</div>
+      <div>Ciclo secagem: <strong>${dryCycleDur} dias</strong> (sec ${p.dDry} + limp ${p.dCleanDry})</div>
+      <div>Salas de secagem: <strong>${Math.max(1, p.nDryRooms)}</strong> (1 batch por sala de cada vez)</div>
+      <div>Pós-colheita completo: <strong>${p.dDry + p.dGtrim + p.dFtrim + p.dPack + p.dLabel} dias</strong></div>
+      <div>Headcount pico: <strong>${state.resourceSummary?.maxPeople || 0} pessoas</strong></div>
+      <div>Regras de agenda humana: <strong>${p.avoidHolidayScheduling ? 'sem fins de semana / feriados nacionais' : 'dias corridos'}</strong></div>
+      <div>Trim: <strong>${p.pauseTrimForOtherTasks ? 'pode pausar para outras tarefas humanas' : 'corre sem pausas automáticas'}</strong></div>
+      <div>Status: <strong style="color:${isOk?'var(--accent)':'var(--c-dry)'}">${isOk?'✓ Ciclo perpétuo viável':'⚠ Bottleneck na secagem'}</strong></div>
+      <div>Genéticas: <strong>${state.geneticNames.slice(0, p.nGenetics).join(', ')}</strong> (troca após ${Math.max(1, p.geneticRotationEvery)} cultivo(s) consecutivos da mesma genética)</div>
+    </div>
+  `;
+
+  document.getElementById('overviewContent').innerHTML = html;
+}
+
+
+
+function renderResources() {
+  const metricsEl = document.getElementById('resourceMetrics');
+  const barsEl = document.getElementById('resourceBars');
+  const timelineEl = document.getElementById('resourceTimeline');
+  const legendEl = document.getElementById('resourceLegend');
+  if (!metricsEl || !barsEl || !timelineEl || !legendEl) return;
+
+  const resourceByDate = state.resourceByDate || {};
+  const sortedDates = Object.keys(resourceByDate).sort();
+  const totals = sortedDates.map(ds => resourceByDate[ds].total);
+  const maxPeople = totals.length ? Math.max(...totals) : 0;
+  const avgPeople = totals.length ? totals.reduce((a, b) => a + b, 0) / totals.length : 0;
+  const activeDays = totals.filter(x => x > 0).length;
+  const peakDates = sortedDates.filter(ds => resourceByDate[ds].total === maxPeople).slice(0, 5);
+
+  metricsEl.innerHTML = `
+    <div class="metric">
+      <div class="m-label">Pico</div>
+      <div class="m-val">${maxPeople}</div>
+      <div class="m-sub">pico no mesmo momento do dia</div>
+    </div>
+    <div class="metric">
+      <div class="m-label">Média ativa</div>
+      <div class="m-val">${avgPeople.toFixed(1)}</div>
+      <div class="m-sub">pessoas/dia com tarefa</div>
+    </div>
+    <div class="metric">
+      <div class="m-label">Dias com carga</div>
+      <div class="m-val">${activeDays}</div>
+      <div class="m-sub">dias no horizonte</div>
+    </div>
+    <div class="metric">
+      <div class="m-label">Picos</div>
+      <div class="m-val">${peakDates.length}</div>
+      <div class="m-sub">${peakDates[0] ? formatDate(peakDates[0]) : 'sem carga'}</div>
+    </div>
+  `;
+
+  const summary = {};
+  (state.resourceEvents || []).forEach(ev => {
+    summary[ev.type] = (summary[ev.type] || 0) + ((ev.staff || 0) * (ev.dur || 1));
+  });
+
+  const maxBar = Math.max(1, ...Object.values(summary), 1);
+  const orderedBars = Object.entries(summary).sort((a, b) => b[1] - a[1]);
+
+  if (!orderedBars.length) {
+    barsEl.innerHTML = '<div class="resource-empty">Sem tarefas com pessoas na configuração atual.</div>';
+  } else {
+    barsEl.innerHTML = orderedBars.map(([type, val]) => `
+      <div class="resource-bar-row">
+        <div>${getTaskLabel(type)}</div>
+        <div class="resource-bar-track"><div class="resource-bar-fill" style="width:${(val / maxBar) * 100}%"></div></div>
+        <div style="text-align:right">${fmtNum(Math.round(val * 10) / 10)}</div>
+      </div>
+    `).join('\n');
+  }
+
+  const topDays = sortedDates
+    .filter(ds => resourceByDate[ds].total > 0)
+    .sort((a, b) => {
+      const diff = resourceByDate[b].total - resourceByDate[a].total;
+      return diff !== 0 ? diff : a.localeCompare(b);
+    })
+    .slice(0, 20);
+
+  if (!topDays.length) {
+    timelineEl.innerHTML = '<div class="resource-empty">Ainda não há carga humana calculada.</div>';
+  } else {
+    timelineEl.innerHTML = `
+      <table class="resource-table">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Total</th>
+            <th>Desagregado</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${topDays.map(ds => {
+            const row = resourceByDate[ds];
+            const parts = Object.entries(row.breakdown)
+              .sort((a, b) => b[1] - a[1])
+              .map(([type, val]) => `${getTaskLabel(type)}: ${val}`)
+              .join('<br>');
+            return `
+              <tr>
+                <td>${formatDate(ds)}</td>
+                <td><strong>${row.total}</strong></td>
+                <td class="resource-breakdown">${parts}</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  legendEl.innerHTML = Object.entries(STAFFING_DEFAULTS).map(([key, meta]) => `
+    <span class="resource-pill">
+      <span class="resource-pill-dot" style="background:${PHASE_COLORS[key] || '#888'}"></span>
+      ${getTaskLabel(key)}
+    </span>
+  `).join('\n');
+}
+
+// ═══════════════════════════════════════════
+// TOOLTIP
+// ═══════════════════════════════════════════
+
+function showTip(e, name, date, dur) {
+  const t = document.getElementById('tooltip');
+  t.innerHTML = `<strong>${name}</strong><br>${date}<br>Duração: ${dur}`;
+  t.style.display = 'block';
+  t.style.left = Math.min(e.clientX + 12, window.innerWidth - 260) + 'px';
+  t.style.top = Math.max(8, e.clientY - 60) + 'px';
+}
+
+function hideTip() {
+  document.getElementById('tooltip').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════
+// DRAWER
+// ═══════════════════════════════════════════
+
+function openDayDrawer(ds, events) {
+  const d = new Date(ds + 'T00:00:00');
+  document.getElementById('drawerTitle').textContent = d.toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  const isHol = HOLIDAYS.has(ds);
+  const dObj = new Date(ds + 'T00:00:00');
+  const isWeekend = dObj.getDay() === 0 || dObj.getDay() === 6;
+
+  let html = '';
+  if (isHol) html += `<div class="event-item" style="border-left-color:var(--c-holiday)"><span class="e-dot" style="background:var(--c-holiday)"></span><div class="e-info"><div class="e-name">🚫 ${HOLIDAY_NAMES[ds]||'Feriado'}</div><div class="e-room">Sem atividades</div></div></div>`;
+  if (isWeekend && !isHol) html += `<div class="event-item"><span class="e-dot" style="background:var(--muted)"></span><div class="e-info"><div class="e-name">Fim de semana</div><div class="e-room">Sem atividades (exceto monitorização secagem)</div></div></div>`;
+
+  const seen = new Set();
+  for (const ev of events) {
+    const k = ev.type + ev.room + ev.label;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    const gName = ev.genetic >= 0 ? ` · ${state.geneticNames[ev.genetic]||'G'+(ev.genetic+1)}` : '';
+    html += `<div class="event-item" style="border-left-color:${ev.color}">
+      <span class="e-dot" style="background:${ev.color}"></span>
+      <div class="e-info">
+        <div class="e-name">${ev.label}${gName}</div>
+        <div class="e-room">${ev.room}</div>
+        <div class="e-dur">${ev.dur}d · início ${formatDate(ev.date)}</div>
+      </div>
+    </div>`;
+  }
+
+  if (!html) html = '<div style="color:var(--muted);font-size:12px;padding:8px">Sem eventos neste dia.</div>';
+
+  document.getElementById('drawerEvents').innerHTML = html;
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeDrawer(e) {
+  if (!e || e.target === document.getElementById('overlay') || !e.target) {
+    document.getElementById('overlay').classList.remove('open');
+  }
+}
+
+// ═══════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════
+
+function updateStickyOffsets() {
+  const header = document.querySelector('.header');
+  const headerH = header ? Math.ceil(header.getBoundingClientRect().height) : 57;
+  document.documentElement.style.setProperty('--tabs-top', headerH + 'px');
+  if (header) {
+    header.style.width = '100%';
+    header.style.maxWidth = '100dvw';
+  }
+  const tabs = document.querySelector('.tab-nav');
+  if (tabs) {
+    tabs.style.width = '100%';
+    tabs.style.maxWidth = '100dvw';
+  }
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const names = ['params','calendar','gantt','resources','overview'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if (name === 'calendar') renderCalendar();
+  if (name === 'gantt') renderGantt();
+  if (name === 'resources') renderResources();
+}
+
+// ═══════════════════════════════════════════
+// EXCEL EXPORT
+// ═══════════════════════════════════════════
+
+
+
+
+function exportExcel() {
+  // Real XLSX export (zipped OpenXML) to avoid Excel corruption/repair issues.
+  const scopeMonths = parseInt(document.getElementById('ganttScope')?.value || '6', 10) || 6;
+  const startDs = vd('startDate') || dateStr(new Date());
+  const totalDays = scopeMonths * 30;
+  const totalHalf = totalDays * 2;
+  const now = new Date();
+  const pad2Local = (n) => String(n).padStart(2, '0');
+
+  const xmlEscape = (value) => String(value ?? '')
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ' ')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+
+  const colorHex = (value, fallback = 'FFFFFF') => {
+    let c = String(value || '').trim().replace('#', '');
+    if (!c) return fallback;
+    if (c.length === 3) c = c.split('').map(ch => ch + ch).join('');
+    c = c.toUpperCase();
+    return /^[0-9A-F]{6}$/.test(c) ? c : fallback;
+  };
+  const argb = (value, fallback = 'FFFFFF') => 'FF' + colorHex(value, fallback);
+  const textColorFor = (hex) => {
+    const c = colorHex(hex, 'FFFFFF');
+    const r = parseInt(c.slice(0, 2), 16);
+    const g = parseInt(c.slice(2, 4), 16);
+    const b = parseInt(c.slice(4, 6), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.64 ? '1A1A14' : 'FFFFFF';
+  };
+  const colLetter = (n) => {
+    let s = '';
+    while (n > 0) {
+      const mod = (n - 1) % 26;
+      s = String.fromCharCode(65 + mod) + s;
+      n = Math.floor((n - 1) / 26);
+    }
+    return s;
+  };
+  const cellRef = (c, r) => colLetter(c) + r;
+
+  const rooms = ['Clone Room'];
+  for (let r = 1; r <= vi('nRooms'); r++) rooms.push(`Sala ${r}`);
+  const dryRoomCount = Math.max(1, vi('nDryRooms'));
+  for (let i = 1; i <= dryRoomCount; i++) rooms.push(dryRoomCount === 1 ? 'Secagem' : `Secagem ${i}`);
+  rooms.push('Trim', 'Packaging', 'Labelling');
+
+  const dayInfo = (ds) => {
+    const d = new Date(ds + 'T00:00:00');
+    const dow = d.getDay();
+    const isHoliday = HOLIDAYS.has(ds);
+    return { isHoliday, isSaturday: dow === 6, isSunday: dow === 0 };
+  };
+
+  // ── XLSX style registry ──
+  const fonts = [];
+  const fills = [
+    '<fill><patternFill patternType="none"/></fill>',
+    '<fill><patternFill patternType="gray125"/></fill>'
+  ];
+  const borders = [];
+  const cellXfs = [];
+  const fontMap = new Map();
+  const fillMap = new Map();
+  const borderMap = new Map();
+  const xfMap = new Map();
+
+  const addFont = (spec = {}) => {
+    const norm = {
+      name: spec.name || 'Calibri',
+      size: String(spec.size || 10),
+      color: argb(spec.color || '1A1A14', '1A1A14'),
+      bold: !!spec.bold
+    };
+    const key = JSON.stringify(norm);
+    if (fontMap.has(key)) return fontMap.get(key);
+    const idx = fonts.length;
+    fonts.push(`<font><sz val="${norm.size}"/><color rgb="${norm.color}"/><name val="${xmlEscape(norm.name)}"/>${norm.bold ? '<b/>' : ''}</font>`);
+    fontMap.set(key, idx);
+    return idx;
+  };
+
+  const addFill = (color = null) => {
+    const hex = color ? argb(color) : null;
+    const key = hex || 'none';
+    if (fillMap.has(key)) return fillMap.get(key);
+    const idx = fills.length;
+    fills.push(hex
+      ? `<fill><patternFill patternType="solid"><fgColor rgb="${hex}"/><bgColor indexed="64"/></patternFill></fill>`
+      : '<fill><patternFill patternType="none"/></fill>'
+    );
+    fillMap.set(key, idx);
+    return idx;
+  };
+
+  const addBorder = (color = 'D8D2C4') => {
+    const hex = argb(color);
+    if (borderMap.has(hex)) return borderMap.get(hex);
+    const idx = borders.length;
+    borders.push(`<border>
+      <left style="thin"><color rgb="${hex}"/></left>
+      <right style="thin"><color rgb="${hex}"/></right>
+      <top style="thin"><color rgb="${hex}"/></top>
+      <bottom style="thin"><color rgb="${hex}"/></bottom>
+      <diagonal/>
+    </border>`);
+    borderMap.set(hex, idx);
+    return idx;
+  };
+
+  const addXf = (spec = {}) => {
+    const norm = {
+      fontId: spec.fontId ?? 0,
+      fillId: spec.fillId ?? 0,
+      borderId: spec.borderId ?? 0,
+      align: spec.align || null
+    };
+    const key = JSON.stringify(norm);
+    if (xfMap.has(key)) return xfMap.get(key);
+    const idx = cellXfs.length;
+    let attrs = `numFmtId="0" fontId="${norm.fontId}" fillId="${norm.fillId}" borderId="${norm.borderId}" xfId="0"`;
+    if (norm.fontId) attrs += ' applyFont="1"';
+    if (norm.fillId) attrs += ' applyFill="1"';
+    if (norm.borderId) attrs += ' applyBorder="1"';
+    let alignXml = '';
+    if (norm.align) {
+      attrs += ' applyAlignment="1"';
+      const parts = [];
+      if (norm.align.h) parts.push(`horizontal="${norm.align.h}"`);
+      if (norm.align.v) parts.push(`vertical="${norm.align.v}"`);
+      if (norm.align.wrap) parts.push('wrapText="1"');
+      alignXml = `<alignment ${parts.join(' ')}/>`;
+    }
+    cellXfs.push(`<xf ${attrs}>${alignXml}</xf>`);
+    xfMap.set(key, idx);
+    return idx;
+  };
+
+  const fontDefault = addFont({});
+  const fontTitle = addFont({ size: 14, bold: true, color: 'FFFFFF' });
+  const fontMeta = addFont({ size: 10, color: '5A554A' });
+  const fontHead = addFont({ size: 10, bold: true, color: 'FFFFFF' });
+  const fontRoom = addFont({ size: 10, bold: true, color: '1A1A14' });
+  const fontDay = addFont({ size: 9, bold: true, color: '5A554A' });
+  const fontDaySun = addFont({ size: 9, bold: true, color: '4A4A4A' });
+  const fontHalf = addFont({ size: 8, color: '7A756A' });
+  const fontHalfSun = addFont({ size: 8, color: '6A6A6A' });
+  const fontHalfHoliday = addFont({ size: 8, bold: true, color: '7A2A10' });
+
+  const fillGreen = addFill('2D5A27');
+  const fillMeta = addFill('F5F2EB');
+  const fillHead = addFill('3A5F38');
+  const fillRoom = addFill('EDE9DF');
+  const fillDay = addFill('F5F2EB');
+  const fillDaySat = addFill('F0F0F0');
+  const fillDaySun = addFill('E0E0E0');
+  const fillDayHoliday = addFill('E05050');
+  const fillHalf = addFill('FFFFFF');
+  const fillHalfSat = addFill('F7F7F7');
+  const fillHalfSun = addFill('EEEEEE');
+  const fillHalfHoliday = addFill('FDE8E0');
+  const fillEmpty = addFill('FFFFFF');
+  const fillEmptySat = addFill('F4F4F4');
+  const fillEmptySun = addFill('E8E8E8');
+  const fillEmptyHoliday = addFill('FDE8E0');
+
+  const borderGray = addBorder('D8D2C4');
+  const borderLight = addBorder('E6E1D6');
+  const borderWhite = addBorder('FFFFFF');
+  const borderHoliday = addBorder('E09070');
+
+  const sDefault = addXf({ fontId: fontDefault, fillId: 0, borderId: 0 });
+  const sTitle = addXf({ fontId: fontTitle, fillId: fillGreen, borderId: borderGray, align: { h: 'center', v: 'center', wrap: true } });
+  const sMeta = addXf({ fontId: fontMeta, fillId: fillMeta, borderId: borderGray, align: { h: 'left', v: 'center', wrap: true } });
+  const sHeadMain = addXf({ fontId: fontHead, fillId: fillGreen, borderId: borderGray, align: { h: 'center', v: 'center', wrap: true } });
+  const sRoom = addXf({ fontId: fontRoom, fillId: fillRoom, borderId: borderGray, align: { h: 'left', v: 'center', wrap: true } });
+  const sTableHead = addXf({ fontId: fontHead, fillId: fillHead, borderId: borderGray, align: { h: 'center', v: 'center', wrap: true } });
+  const sCell = addXf({ fontId: fontDefault, fillId: fillHalf, borderId: borderGray, align: { h: 'left', v: 'center', wrap: true } });
+  const sCellCenter = addXf({ fontId: fontDefault, fillId: fillHalf, borderId: borderGray, align: { h: 'center', v: 'center', wrap: true } });
+  const sDay = addXf({ fontId: fontDay, fillId: fillDay, borderId: borderGray, align: { h: 'center', v: 'center', wrap: true } });
+  const sDaySat = addXf({ fontId: fontDay, fillId: fillDaySat, borderId: borderGray, align: { h: 'center', v: 'center', wrap: true } });
+  const sDaySun = addXf({ fontId: fontDaySun, fillId: fillDaySun, borderId: borderGray, align: { h: 'center', v: 'center', wrap: true } });
+  const sDayHoliday = addXf({ fontId: fontDay, fillId: fillDayHoliday, borderId: borderGray, align: { h: 'center', v: 'center', wrap: true } });
+  const sHalf = addXf({ fontId: fontHalf, fillId: fillHalf, borderId: borderGray, align: { h: 'center', v: 'center', wrap: true } });
+  const sHalfSat = addXf({ fontId: fontHalf, fillId: fillHalfSat, borderId: borderGray, align: { h: 'center', v: 'center', wrap: true } });
+  const sHalfSun = addXf({ fontId: fontHalfSun, fillId: fillHalfSun, borderId: borderGray, align: { h: 'center', v: 'center', wrap: true } });
+  const sHalfHoliday = addXf({ fontId: fontHalfHoliday, fillId: fillHalfHoliday, borderId: borderHoliday, align: { h: 'center', v: 'center', wrap: true } });
+  const sEmpty = addXf({ fontId: fontDefault, fillId: fillEmpty, borderId: borderLight, align: { h: 'center', v: 'center', wrap: true } });
+  const sEmptySat = addXf({ fontId: fontDefault, fillId: fillEmptySat, borderId: borderLight, align: { h: 'center', v: 'center', wrap: true } });
+  const sEmptySun = addXf({ fontId: fontDefault, fillId: fillEmptySun, borderId: borderLight, align: { h: 'center', v: 'center', wrap: true } });
+  const sEmptyHoliday = addXf({ fontId: fontDefault, fillId: fillEmptyHoliday, borderId: borderHoliday, align: { h: 'center', v: 'center', wrap: true } });
+
+  const eventStyleCache = new Map();
+  const eventStyleId = (color) => {
+    const fill = colorHex(color, '4A9E5C');
+    if (eventStyleCache.has(fill)) return eventStyleCache.get(fill);
+    const fontId = addFont({ size: 9, bold: true, color: textColorFor(fill) });
+    const fillId = addFill(fill);
+    const styleId = addXf({ fontId, fillId, borderId: borderWhite, align: { h: 'center', v: 'center', wrap: true } });
+    eventStyleCache.set(fill, styleId);
+    return styleId;
+  };
+
+  const emptyStyleForHalf = (halfIndex) => {
+    const ds = addDays(startDs, Math.floor(halfIndex / 2));
+    const info = dayInfo(ds);
+    if (info.isHoliday) return sEmptyHoliday;
+    if (info.isSunday) return sEmptySun;
+    if (info.isSaturday) return sEmptySat;
+    return sEmpty;
+  };
+  const dayHeaderStyle = (ds) => {
+    const info = dayInfo(ds);
+    if (info.isHoliday) return sDayHoliday;
+    if (info.isSunday) return sDaySun;
+    if (info.isSaturday) return sDaySat;
+    return sDay;
+  };
+  const halfHeaderStyle = (ds) => {
+    const info = dayInfo(ds);
+    if (info.isHoliday) return sHalfHoliday;
+    if (info.isSunday) return sHalfSun;
+    if (info.isSaturday) return sHalfSat;
+    return sHalf;
+  };
+
+  const shortLabel = (ev) => {
+    if ((ev.dur || 0) >= 2) return ev.label || getTaskLabel(ev.type);
+    return PHASE_LABELS[ev.type] || getTaskLabel(ev.type) || ev.label || '';
+  };
+
+  const visibleEvents = (state.events || []).filter(ev => !ev.resourceOnly && ev.type !== 'holiday' && state.activeFilters.has(ev.type));
+  const roomEvents = Object.fromEntries(rooms.map(room => [room, []]));
+  visibleEvents.forEach(ev => { if (roomEvents[ev.room]) roomEvents[ev.room].push(ev); });
+
+  const rowsToXml = (rows) => rows.map(row => {
+    const cells = (row.cells || []).slice().sort((a, b) => a.c - b.c).map(cell => {
+      const ref = cellRef(cell.c, row.r);
+      const styleAttr = cell.s != null ? ` s="${cell.s}"` : '';
+      if (cell.t === 'n') return `<c r="${ref}"${styleAttr}><v>${cell.v}</v></c>`;
+      return `<c r="${ref}"${styleAttr} t="inlineStr"><is><t xml:space="preserve">${xmlEscape(cell.v ?? '')}</t></is></c>`;
+    }).join('');
+    const heightAttr = row.h ? ` ht="${row.h}" customHeight="1"` : '';
+    return `<row r="${row.r}"${heightAttr}>${cells}</row>`;
+  }).join('');
+
+  const buildWorksheetXml = ({ rows, merges = [], cols = [], freeze = null }) => {
+    const lastCol = Math.max(1, ...rows.flatMap(r => (r.cells || []).map(c => c.c + (c.merge || 0))));
+    const lastRow = rows.length ? rows[rows.length - 1].r : 1;
+    const dim = `A1:${cellRef(lastCol, lastRow)}`;
+    const colsXml = cols.length ? `<cols>${cols.map(c => `<col min="${c.min}" max="${c.max}" width="${c.width}" customWidth="1"/>`).join('')}</cols>` : '';
+    const mergeXml = merges.length ? `<mergeCells count="${merges.length}">${merges.map(ref => `<mergeCell ref="${ref}"/>`).join('')}</mergeCells>` : '';
+    const paneXml = freeze ? `<sheetViews><sheetView workbookViewId="0"><pane xSplit="${freeze.xSplit || 0}" ySplit="${freeze.ySplit || 0}" topLeftCell="${freeze.topLeftCell}" activePane="${freeze.activePane || 'bottomRight'}" state="frozen"/><selection pane="${freeze.activePane || 'bottomRight'}" activeCell="${freeze.topLeftCell}" sqref="${freeze.topLeftCell}"/></sheetView></sheetViews>` : '<sheetViews><sheetView workbookViewId="0"/></sheetViews>';
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <dimension ref="${dim}"/>
+  ${paneXml}
+  <sheetFormatPr defaultRowHeight="18"/>
+  ${colsXml}
+  <sheetData>${rowsToXml(rows)}</sheetData>
+  ${mergeXml}
+  <pageMargins left="0.3" right="0.3" top="0.75" bottom="0.75" header="0.3" footer="0.3"/>
+</worksheet>`;
+  };
+
+  // ── Gantt sheet ──
+  const ganttRows = [];
+  const ganttMerges = [];
+  const ganttCols = [{ min: 1, max: 1, width: 22 }];
+  for (let i = 0; i < totalHalf; i++) ganttCols.push({ min: i + 2, max: i + 2, width: 4.3 });
+
+  let rowNum = 1;
+  ganttRows.push({ r: rowNum, h: 24, cells: [{ c: 1, v: `Ciclo Perpétuo · Gantt (${scopeMonths} meses)`, s: sTitle, merge: totalHalf }] });
+  ganttMerges.push(`A${rowNum}:${cellRef(totalHalf + 1, rowNum)}`);
+  rowNum++;
+  ganttRows.push({ r: rowNum, h: 20, cells: [{ c: 1, v: `Início: ${formatDate(startDs)} · Exportado: ${now.toLocaleString('pt-PT')} · Salas cultivo: ${vi('nRooms')} · Salas secagem: ${Math.max(1, vi('nDryRooms'))}`, s: sMeta, merge: totalHalf }] });
+  ganttMerges.push(`A${rowNum}:${cellRef(totalHalf + 1, rowNum)}`);
+  rowNum++;
+
+  const headDayCells = [{ c: 1, v: 'Área', s: sHeadMain }];
+  const headHalfCells = [{ c: 1, v: 'AM/PM', s: sHeadMain }];
+  for (let d = 0; d < totalDays; d++) {
+    const ds = addDays(startDs, d);
+    const dt = new Date(ds + 'T00:00:00');
+    const wd = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][dt.getDay()];
+    const dayLabel = `${pad2Local(dt.getDate())}/${pad2Local(dt.getMonth() + 1)} ${wd}${HOLIDAYS.has(ds) ? ' · F' : ''}`;
+    const c = 2 + d * 2;
+    headDayCells.push({ c, v: dayLabel, s: dayHeaderStyle(ds), merge: 1 });
+    ganttMerges.push(`${cellRef(c, rowNum)}:${cellRef(c + 1, rowNum)}`);
+    headHalfCells.push({ c, v: 'AM', s: halfHeaderStyle(ds) });
+    headHalfCells.push({ c: c + 1, v: 'PM', s: halfHeaderStyle(ds) });
+  }
+  ganttRows.push({ r: rowNum, h: 26, cells: headDayCells });
+  rowNum++;
+  ganttRows.push({ r: rowNum, h: 20, cells: headHalfCells });
+  rowNum++;
+
+  rooms.forEach(room => {
+    const evs = (roomEvents[room] || [])
+      .map(ev => {
+        const rawStart = Math.round(markerOffsetFrom(startDs, { date: ev.date, frac: ev.startFrac || 0 }) * 2);
+        const durHalf = Math.max(1, Math.round((ev.dur || 1) * 2));
+        return { ...ev, rawStart, rawEnd: rawStart + durHalf };
+      })
+      .filter(ev => ev.rawEnd > 0 && ev.rawStart < totalHalf)
+      .sort((a, b) => a.rawStart - b.rawStart);
+
+    const cells = [{ c: 1, v: room, s: sRoom }];
+    const covered = Array(totalHalf).fill(false);
+    evs.forEach(ev => {
+      const segStart = Math.max(0, ev.rawStart);
+      const segEnd = Math.min(totalHalf, ev.rawEnd);
+      const span = Math.max(1, segEnd - segStart);
+      const col = 2 + segStart;
+      cells.push({ c: col, v: shortLabel(ev), s: eventStyleId(ev.color), merge: span - 1 });
+      if (span > 1) ganttMerges.push(`${cellRef(col, rowNum)}:${cellRef(col + span - 1, rowNum)}`);
+      for (let i = segStart; i < segEnd; i++) covered[i] = true;
+    });
+    for (let half = 0; half < totalHalf; half++) {
+      if (!covered[half]) cells.push({ c: 2 + half, v: '', s: emptyStyleForHalf(half) });
+    }
+    ganttRows.push({ r: rowNum, h: 24, cells });
+    rowNum++;
+  });
+
+  rowNum++;
+  ganttRows.push({ r: rowNum, h: 20, cells: [{ c: 1, v: 'Legenda', s: sTableHead }, { c: 2, v: 'Cor', s: sTableHead }, { c: 3, v: 'Descrição', s: sTableHead }] });
+  rowNum++;
+  const legendItems = [
+    ['cloneCut', PHASE_COLORS.cloneCut, getTaskLabel('cloneCut')],
+    ['clone', GENETICS_COLORS[0], 'Enraizamento / genética'],
+    ['prepRoom', PHASE_COLORS.prepRoom, getTaskLabel('prepRoom')],
+    ['transplant', PHASE_COLORS.transplant, getTaskLabel('transplant')],
+    ['veg', GENETICS_COLORS[1], 'Vegetação / genética'],
+    ['flower', GENETICS_COLORS[2], 'Floração / genética'],
+    ['harvest', PHASE_COLORS.harvest, getTaskLabel('harvest')],
+    ['dry', PHASE_COLORS.dry, 'Secagem'],
+    ['gtrim', PHASE_COLORS.gtrim, getTaskLabel('gtrim')],
+    ['ftrim', PHASE_COLORS.ftrim, getTaskLabel('ftrim')],
+    ['pack', PHASE_COLORS.pack, getTaskLabel('pack')],
+    ['label', PHASE_COLORS.label, getTaskLabel('label')]
+  ];
+  legendItems.forEach(([, color, text]) => {
+    ganttRows.push({ r: rowNum, h: 18, cells: [
+      { c: 1, v: text, s: sCell },
+      { c: 2, v: '', s: eventStyleId(color) },
+      { c: 3, v: '', s: sCell }
+    ]});
+    rowNum++;
+  });
+
+  // ── Eventos sheet ──
+  const eventRows = [];
+  let er = 1;
+  eventRows.push({ r: er++, h: 22, cells: [{ c: 1, v: 'Eventos', s: sTitle, merge: 7 }] });
+  const eventMerges = ['A1:H1'];
+  eventRows.push({ r: er++, h: 20, cells: [
+    { c: 1, v: 'Início', s: sTableHead }, { c: 2, v: 'Fim', s: sTableHead }, { c: 3, v: 'Área', s: sTableHead },
+    { c: 4, v: 'Fase', s: sTableHead }, { c: 5, v: 'Descrição', s: sTableHead }, { c: 6, v: 'Genética', s: sTableHead },
+    { c: 7, v: 'Dias', s: sTableHead }, { c: 8, v: 'Pessoas', s: sTableHead }
+  ]});
+  [...visibleEvents]
+    .sort((a,b) => markerToHalfIndex({date:a.date, frac:a.startFrac || 0}) - markerToHalfIndex({date:b.date, frac:b.startFrac || 0}))
+    .forEach(ev => {
+      const gName = ev.genetic >= 0 ? (state.geneticNames[ev.genetic] || `G${ev.genetic + 1}`) : '';
+      const endTxt = `${formatDate(ev.endMarkerDate || ev.endDate || ev.date)}${ev.endFrac ? ' (' + fmtNum(ev.endFrac) + ')' : ''}`;
+      eventRows.push({ r: er++, h: 18, cells: [
+        { c: 1, v: formatDate(ev.date), s: sCell },
+        { c: 2, v: endTxt, s: sCell },
+        { c: 3, v: ev.room || '', s: sCell },
+        { c: 4, v: getTaskLabel(ev.type), s: sCell },
+        { c: 5, v: ev.label || '', s: sCell },
+        { c: 6, v: gName, s: sCell },
+        { c: 7, v: fmtNum(ev.dur || 0), s: sCellCenter },
+        { c: 8, v: fmtNum(ev.staff || 0), s: sCellCenter }
+      ]});
+    });
+
+  // ── Recursos sheet ──
+  const resourceRows = [];
+  let rr = 1;
+  resourceRows.push({ r: rr++, h: 22, cells: [{ c: 1, v: 'Recursos humanos', s: sTitle, merge: 4 }] });
+  const resourceMerges = ['A1:E1'];
+  resourceRows.push({ r: rr++, h: 20, cells: [
+    { c: 1, v: 'Data', s: sTableHead }, { c: 2, v: 'Pico dia', s: sTableHead },
+    { c: 3, v: 'AM', s: sTableHead }, { c: 4, v: 'PM', s: sTableHead }, { c: 5, v: 'Desagregado', s: sTableHead }
+  ]});
+  Object.keys(state.resourceByDate || {}).sort().forEach(ds => {
+    const row = state.resourceByDate[ds];
+    if (!row || (row.total || 0) <= 0) return;
+    const parts = Object.entries(row.breakdown || {}).sort((a,b) => b[1]-a[1]).map(([type,val]) => `${getTaskLabel(type)}: ${fmtNum(val)}`).join(' · ');
+    resourceRows.push({ r: rr++, h: 18, cells: [
+      { c: 1, v: formatDate(ds), s: sCell },
+      { c: 2, v: fmtNum(row.total || 0), s: sCellCenter },
+      { c: 3, v: fmtNum(row.slots?.am?.total || 0), s: sCellCenter },
+      { c: 4, v: fmtNum(row.slots?.pm?.total || 0), s: sCellCenter },
+      { c: 5, v: parts, s: sCell }
+    ]});
+  });
+
+  // ── Parâmetros sheet ──
+  const p = {
+    start: vd('startDate'),
+    nRooms: vi('nRooms'),
+    nDryRooms: Math.max(1, vi('nDryRooms')),
+    nGenetics: vi('nGenetics'),
+    geneticRotationEvery: Math.max(1, vi('geneticRotationEvery')),
+    horizonMonths: vi('horizonMonths'),
+    dCloneCut: v('dCloneCut'), dCloneRoot: v('dCloneRoot'), dPrepCultRoom: v('dPrepCultRoom'), dTransplant: v('dTransplant'), dVeg: v('dVeg'), dFlower: v('dFlower'), dHarvest: v('dHarvest'), dCleanRoom: v('dCleanRoom'), dDry: v('dDry'), dCleanDry: v('dCleanDry'), dGtrim: v('dGtrim'), dFtrim: v('dFtrim'), dPack: v('dPack'), dLabel: v('dLabel'),
+    avoidHolidayScheduling: !!document.getElementById('avoidHolidayScheduling')?.checked,
+    pauseTrimForOtherTasks: !!document.getElementById('pauseTrimForOtherTasks')?.checked,
+    pausePackLabelForOtherTasks: !!document.getElementById('pausePackLabelForOtherTasks')?.checked,
+  };
+  const paramRows = [];
+  let pr = 1;
+  const paramMerges = ['A1:C1', 'A26:C26'];
+  paramRows.push({ r: pr++, h: 22, cells: [{ c: 1, v: 'Parâmetros e regras', s: sTitle, merge: 2 }] });
+  paramRows.push({ r: pr++, h: 20, cells: [{ c: 1, v: 'Parâmetro', s: sTableHead }, { c: 2, v: 'Valor', s: sTableHead }, { c: 3, v: 'Notas', s: sTableHead }] });
+  [
+    ['Data de início', formatDate(p.start), 'Arranque do ciclo na Clone Room'],
+    ['Salas de cultivo', String(p.nRooms), 'Linhas de produção principais'],
+    ['Salas de secagem', String(p.nDryRooms), '1 batch por sala de cada vez'],
+    ['Genéticas', String(p.nGenetics), 'Lista configurada no painel'],
+    ['Troca genética a cada', String(p.geneticRotationEvery), 'Cultivos consecutivos da mesma genética'],
+    ['Horizonte planeamento', String(p.horizonMonths), 'Meses'],
+    ['Fazer clones', fmtNum(p.dCloneCut), 'Dias'],
+    ['Enraizamento', fmtNum(p.dCloneRoot), 'Dias'],
+    ['Preparar sala cultivo', fmtNum(p.dPrepCultRoom), 'Dias'],
+    ['Entrada/transplante', fmtNum(p.dTransplant), 'Dias'],
+    ['Vegetação', fmtNum(p.dVeg), 'Dias'],
+    ['Floração', fmtNum(p.dFlower), 'Dias'],
+    ['Colheita', fmtNum(p.dHarvest), 'Dias'],
+    ['Limpeza sala cultivo', fmtNum(p.dCleanRoom), 'Dias'],
+    ['Secagem', fmtNum(p.dDry), 'Dias'],
+    ['Limpeza sala secagem', fmtNum(p.dCleanDry), 'Dias'],
+    ['Gross trim', fmtNum(p.dGtrim), 'Dias'],
+    ['Fine trim', fmtNum(p.dFtrim), 'Dias'],
+    ['Packaging', fmtNum(p.dPack), 'Dias'],
+    ['Labelling + QC', fmtNum(p.dLabel), 'Dias'],
+    ['Evitar fins de semana / feriados', p.avoidHolidayScheduling ? 'Sim' : 'Não', 'Só tarefas humanas'],
+    ['Pausar Fine trim', p.pauseTrimForOtherTasks ? 'Sim' : 'Não', 'Para abrir espaço a outras tarefas'],
+    ['Mover Packaging / Labelling', p.pausePackLabelForOtherTasks ? 'Sim' : 'Não', 'Para baixar picos de equipa']
+  ].forEach(([label, value, note]) => {
+    paramRows.push({ r: pr++, h: 18, cells: [{ c: 1, v: label, s: sCell }, { c: 2, v: value, s: sCellCenter }, { c: 3, v: note, s: sCell }] });
+  });
+  paramRows.push({ r: pr++, h: 18, cells: [{ c: 1, v: 'Recursos por tarefa', s: sTitle, merge: 2 }] });
+  paramRows.push({ r: pr++, h: 20, cells: [{ c: 1, v: 'Tarefa', s: sTableHead }, { c: 2, v: 'Pessoas', s: sTableHead }, { c: 3, v: 'Nota', s: sTableHead }] });
+  Object.entries(STAFFING_DEFAULTS).forEach(([key, meta]) => {
+    const people = state.staffing?.[key]?.people ?? meta.people ?? 0;
+    paramRows.push({ r: pr++, h: 18, cells: [
+      { c: 1, v: getTaskLabel(key), s: sCell },
+      { c: 2, v: fmtNum(people), s: sCellCenter },
+      { c: 3, v: meta.hint || '', s: sCell }
+    ]});
+  });
+
+  const sheetXmls = [
+    buildWorksheetXml({
+      rows: ganttRows,
+      merges: ganttMerges,
+      cols: ganttCols,
+      freeze: { xSplit: 1, ySplit: 4, topLeftCell: 'B5', activePane: 'bottomRight' }
+    }),
+    buildWorksheetXml({
+      rows: eventRows,
+      merges: eventMerges,
+      cols: [
+        { min: 1, max: 1, width: 14 }, { min: 2, max: 2, width: 16 }, { min: 3, max: 3, width: 18 },
+        { min: 4, max: 4, width: 16 }, { min: 5, max: 5, width: 40 }, { min: 6, max: 6, width: 14 },
+        { min: 7, max: 7, width: 10 }, { min: 8, max: 8, width: 10 }
+      ],
+      freeze: { xSplit: 0, ySplit: 2, topLeftCell: 'A3', activePane: 'bottomLeft' }
+    }),
+    buildWorksheetXml({
+      rows: resourceRows,
+      merges: resourceMerges,
+      cols: [
+        { min: 1, max: 1, width: 16 }, { min: 2, max: 2, width: 10 }, { min: 3, max: 3, width: 10 },
+        { min: 4, max: 4, width: 10 }, { min: 5, max: 5, width: 48 }
+      ],
+      freeze: { xSplit: 0, ySplit: 2, topLeftCell: 'A3', activePane: 'bottomLeft' }
+    }),
+    buildWorksheetXml({
+      rows: paramRows,
+      merges: paramMerges,
+      cols: [{ min: 1, max: 1, width: 28 }, { min: 2, max: 2, width: 12 }, { min: 3, max: 3, width: 34 }],
+      freeze: { xSplit: 0, ySplit: 2, topLeftCell: 'A3', activePane: 'bottomLeft' }
+    })
+  ];
+
+  const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <fonts count="${fonts.length}">${fonts.join('')}</fonts>
+  <fills count="${fills.length}">${fills.join('')}</fills>
+  <borders count="${borders.length}">${borders.join('')}</borders>
+  <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+  <cellXfs count="${cellXfs.length}">${cellXfs.join('')}</cellXfs>
+  <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+</styleSheet>`;
+
+  const createdIso = now.toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const workbookXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <bookViews><workbookView xWindow="0" yWindow="0" windowWidth="24000" windowHeight="12000"/></bookViews>
+  <sheets>
+    <sheet name="Gantt" sheetId="1" r:id="rId1"/>
+    <sheet name="Eventos" sheetId="2" r:id="rId2"/>
+    <sheet name="Recursos" sheetId="3" r:id="rId3"/>
+    <sheet name="Parâmetros" sheetId="4" r:id="rId4"/>
+  </sheets>
+</workbook>`;
+
+  const workbookRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/>
+  <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet4.xml"/>
+  <Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`;
+
+  const relsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
+</Relationships>`;
+
+  const contentTypesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/worksheets/sheet4.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
+  <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
+</Types>`;
+
+  const coreXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <dc:creator>OpenAI</dc:creator>
+  <cp:lastModifiedBy>OpenAI</cp:lastModifiedBy>
+  <dcterms:created xsi:type="dcterms:W3CDTF">${createdIso}</dcterms:created>
+  <dcterms:modified xsi:type="dcterms:W3CDTF">${createdIso}</dcterms:modified>
+  <dc:title>Ciclo Perpétuo</dc:title>
+</cp:coreProperties>`;
+
+  const appXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+  <Application>OpenAI</Application>
+  <DocSecurity>0</DocSecurity>
+  <ScaleCrop>false</ScaleCrop>
+  <HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>Worksheets</vt:lpstr></vt:variant><vt:variant><vt:i4>4</vt:i4></vt:variant></vt:vector></HeadingPairs>
+  <TitlesOfParts><vt:vector size="4" baseType="lpstr"><vt:lpstr>Gantt</vt:lpstr><vt:lpstr>Eventos</vt:lpstr><vt:lpstr>Recursos</vt:lpstr><vt:lpstr>Parâmetros</vt:lpstr></vt:vector></TitlesOfParts>
+  <Company>OpenAI</Company>
+</Properties>`;
+
+  // ── ZIP writer (store method, no compression) ──
+  const textEncoder = new TextEncoder();
+  const toU8 = (data) => data instanceof Uint8Array ? data : textEncoder.encode(String(data));
+  const u16 = (n) => new Uint8Array([n & 255, (n >>> 8) & 255]);
+  const u32 = (n) => new Uint8Array([n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255]);
+  const concatU8 = (parts) => {
+    const total = parts.reduce((sum, p) => sum + p.length, 0);
+    const out = new Uint8Array(total);
+    let offset = 0;
+    parts.forEach(p => { out.set(p, offset); offset += p.length; });
+    return out;
+  };
+  const crcTable = (() => {
+    const table = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      table[i] = c >>> 0;
+    }
+    return table;
+  })();
+  const crc32 = (u8) => {
+    let crc = 0xFFFFFFFF;
+    for (let i = 0; i < u8.length; i++) crc = crcTable[(crc ^ u8[i]) & 0xFF] ^ (crc >>> 8);
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  };
+  const dosDateTime = (date) => {
+    const y = Math.max(1980, date.getFullYear());
+    const m = date.getMonth() + 1;
+    const d = date.getDate();
+    const hh = date.getHours();
+    const mm = date.getMinutes();
+    const ss = Math.floor(date.getSeconds() / 2);
+    return {
+      time: (hh << 11) | (mm << 5) | ss,
+      date: ((y - 1980) << 9) | (m << 5) | d
+    };
+  };
+  const zipStore = (files) => {
+    const localParts = [];
+    const centralParts = [];
+    let offset = 0;
+    const dt = dosDateTime(now);
+    files.forEach(file => {
+      const nameU8 = toU8(file.name);
+      const dataU8 = toU8(file.data);
+      const crc = crc32(dataU8);
+      const localHeader = concatU8([
+        u32(0x04034B50), u16(20), u16(0), u16(0), u16(dt.time), u16(dt.date),
+        u32(crc), u32(dataU8.length), u32(dataU8.length), u16(nameU8.length), u16(0), nameU8
+      ]);
+      localParts.push(localHeader, dataU8);
+      const centralHeader = concatU8([
+        u32(0x02014B50), u16(20), u16(20), u16(0), u16(0), u16(dt.time), u16(dt.date),
+        u32(crc), u32(dataU8.length), u32(dataU8.length), u16(nameU8.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset), nameU8
+      ]);
+      centralParts.push(centralHeader);
+      offset += localHeader.length + dataU8.length;
+    });
+    const centralSize = centralParts.reduce((sum, p) => sum + p.length, 0);
+    const end = concatU8([
+      u32(0x06054B50), u16(0), u16(0), u16(files.length), u16(files.length), u32(centralSize), u32(offset), u16(0)
+    ]);
+    return new Blob([...localParts, ...centralParts, end], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  };
+
+  const files = [
+    { name: '[Content_Types].xml', data: contentTypesXml },
+    { name: '_rels/.rels', data: relsXml },
+    { name: 'docProps/core.xml', data: coreXml },
+    { name: 'docProps/app.xml', data: appXml },
+    { name: 'xl/workbook.xml', data: workbookXml },
+    { name: 'xl/_rels/workbook.xml.rels', data: workbookRelsXml },
+    { name: 'xl/styles.xml', data: stylesXml },
+    { name: 'xl/worksheets/sheet1.xml', data: sheetXmls[0] },
+    { name: 'xl/worksheets/sheet2.xml', data: sheetXmls[1] },
+    { name: 'xl/worksheets/sheet3.xml', data: sheetXmls[2] },
+    { name: 'xl/worksheets/sheet4.xml', data: sheetXmls[3] }
+  ];
+
+  const blob = zipStore(files);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'ciclo_perpetuo_planeador_excel.xlsx';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+
+loadState();
+Array.from(FRACTIONAL_IDS).forEach(id => { const el = document.getElementById(id); if (el) { el.step = '0.5'; el.min = '0.5'; } });
+updateStickyOffsets();
+buildGeneticsList();
+recalc();
+window.addEventListener('resize', updateStickyOffsets);
+window.addEventListener('orientationchange', updateStickyOffsets);
+window.addEventListener('load', updateStickyOffsets);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(updateStickyOffsets);
+window.addEventListener('error', (e) => hardFail('Erro JavaScript no planeador.', e.error || e.message));
+</script>
+</body>
+</html>
