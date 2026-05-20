@@ -1,5 +1,5 @@
 {
-  "current_token": "bf2218db-90bc-4099-ad7b-0ba17c54748c",
+  "current_token": "fbee711c-00c5-433c-ae31-568bf9d427b5",
   "last_dataset_sha256": "78341d0ade991df3e4d82712d91303ea04ce1f05a8b7e5836cb1cd2816ccc28c",
   "rotate_before_hours": 6,
   "schema_version": 1,
@@ -96,6 +96,13 @@
       "created_at": "2026-05-18T05:54:19Z",
       "expires_at": "2026-05-21T05:54:19Z",
       "uuid": "bf2218db-90bc-4099-ad7b-0ba17c54748c"
+    },
+    {
+      "archived": false,
+      "collector_url": "https://webhook.site/fbee711c-00c5-433c-ae31-568bf9d427b5",
+      "created_at": "2026-05-20T23:59:36Z",
+      "expires_at": "2026-05-23T23:59:36Z",
+      "uuid": "fbee711c-00c5-433c-ae31-568bf9d427b5"
     }
   ]
 }
