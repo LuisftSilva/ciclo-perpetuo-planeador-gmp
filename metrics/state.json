@@ -56,7 +56,7 @@
       "uuid": "6de876d4-abd8-4e2f-9c47-23512364f3a0"
     },
     {
-      "archived": false,
+      "archived": true,
       "collector_url": "https://webhook.site/ecf55ed5-8ba0-465d-adbc-8c187981b01b",
       "created_at": "2026-05-06T15:32:31Z",
       "expires_at": "2026-05-09T15:32:31Z",
