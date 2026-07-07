@@ -133,7 +133,7 @@
       "uuid": "25d41914-28d2-42b4-8fae-6ff62a410101"
     },
     {
-      "archived": false,
+      "archived": true,
       "collector_url": "https://webhook.site/eab496ad-c9c6-4049-9ad2-0db8ad0fba83",
       "created_at": "2026-06-04T05:16:34Z",
       "expires_at": "2026-06-07T05:16:34Z",
